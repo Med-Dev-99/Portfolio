@@ -1,0 +1,41 @@
+---
+import Icon from './Icon.astro';
+import SqlKicker from './SqlKicker.astro';
+
+interface Props {
+  query: string;
+  title: string;
+  subtitle: string;
+  facts: { label: string; value: string }[];
+  links: { label: string; href: string; icon?: 'github' | 'globe' | 'arrow-up-right' }[];
+}
+const { query, title, subtitle, facts, links } = Astro.props;
+---
+
+<header class="pb-12 pt-10 sm:pt-14">
+  <div class="wrap">
+    <a href="/#work" class="mb-10 flex w-fit items-center gap-2 text-sm text-fg-2 transition-colors hover:text-fg">
+      <Icon name="arrow-left" class="size-4" /> All work
+    </a>
+    <SqlKicker q={query} />
+    <h1 class="mt-5 text-[clamp(44px,8vw,92px)] leading-[.98] tracking-[-.045em]">{title}</h1>
+    <p class="mt-5 max-w-3xl text-[clamp(19px,2.3vw,26px)] leading-snug text-fg-2">{subtitle}</p>
+
+    <dl class="mt-10 grid gap-px overflow-hidden rounded-[14px] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+      {facts.map((f) => (
+        <div class="bg-surface px-5 py-4">
+          <dt class="label">{f.label}</dt>
+          <dd class="m-0 mt-1.5 text-[15px] leading-snug text-fg">{f.value}</dd>
+        </div>
+      ))}
+    </dl>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+      {links.map((l, i) => (
+        <a href={l.href} target="_blank" rel="noopener" class:list={['btn', i === 0 && 'btn-primary']}>
+          <Icon name={l.icon ?? 'arrow-up-right'} /> {l.label}
+        </a>
+      ))}
+    </div>
+  </div>
+</header>
