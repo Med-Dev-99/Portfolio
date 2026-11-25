@@ -1,0 +1,326 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Shot from '../components/Shot.astro';
+import SqlKicker from '../components/SqlKicker.astro';
+import ArchFlow from '../components/ArchFlow.astro';
+import PipelineSim from '../components/PipelineSim.astro';
+import HeroStream from '../components/HeroStream.astro';
+import StackLineage from '../components/StackLineage.astro';
+import {
+  site, hero, proof, featured, dockerInspector, moreProjects,
+  experience, earlier, about, principles, education, credentials,
+} from '../data/profile';
+---
+
+<Base>
+  <!-- ================= HERO ================= -->
+  <HeroStream />
+
+  <!-- ================= PROOF ================= -->
+  <section aria-label="Highlights" class="pb-4">
+    <div class="wrap">
+      <dl class="m-0 grid grid-cols-2 gap-px overflow-hidden rounded-[18px] border border-line bg-line lg:grid-cols-4">
+        {proof.map((item) => (
+          <div class="flex flex-col bg-surface p-5 sm:p-6">
+            <dd class="tnum order-1 m-0 text-[clamp(26px,3.4vw,38px)] font-semibold leading-none tracking-[-.04em]">{item.value}</dd>
+            <dt class="order-2 mt-2.5 text-[14.5px] leading-snug text-fg-2">{item.label}</dt>
+            <dd class="order-3 m-0 mt-auto pt-3 font-mono text-[11px] text-muted">{item.source}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <!-- ================= WORK ================= -->
+  <section id="work" class="section">
+    <div class="wrap">
+      <header class="mb-10 grid max-w-3xl gap-3" data-reveal>
+        <SqlKicker q="SELECT * FROM projects WHERE featured ORDER BY impact DESC;" />
+        <h2 class="section-title">Featured projects</h2>
+        <p class="m-0 text-lg text-fg-2">Problem, architecture, the decisions that mattered, and what they achieved.</p>
+      </header>
+
+      <!-- FIREBRIDGE -->
+      <article class="card overflow-hidden" data-reveal>
+        <div class="grid gap-10 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:p-10">
+          <div class="flex flex-col">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-md border border-primary/30 bg-primary/8 px-2 py-1 font-mono text-[11.5px] text-primary">{featured.badge}</span>
+              <span class="inline-flex items-center gap-1.5 rounded-md border border-green/30 bg-green/8 px-2 py-1 font-mono text-[11.5px] text-green"><span class="size-1.5 rounded-full bg-green"></span>in production</span>
+            </div>
+            <h3 class="mt-5 text-[clamp(34px,4.6vw,52px)] tracking-[-.045em]">{featured.name}</h3>
+            <p class="mt-2 text-[clamp(18px,2vw,21px)] leading-snug text-fg">{featured.tagline}</p>
+            <p class="mt-4 text-[15.5px] text-fg-2">{featured.summary}</p>
+            <p class="mt-4 rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-[14px] text-fg-2"><span class="label mr-2">my role</span>{featured.role}</p>
+            <dl class="m-0 mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {featured.metrics.map((m) => (
+                <div class="flex flex-col">
+                  <dd class="tnum order-1 m-0 text-2xl font-semibold tracking-tight">{m.value}</dd>
+                  <dt class="order-2 font-mono text-[11px] text-muted">{m.label}</dt>
+                </div>
+              ))}
+            </dl>
+            <div class="mt-8 flex flex-wrap gap-3 lg:mt-auto lg:pt-8">
+              <a href={featured.links.caseStudy} class="btn btn-primary">Read the case study <Icon name="arrow-right" /></a>
+              <a href={featured.links.live} target="_blank" rel="noopener" class="btn">Live app <Icon name="arrow-up-right" /></a>
+            </div>
+          </div>
+          <div class="relative lg:self-center">
+            <Shot src="/images/firebridge/home" widths={[800, 1440]} width={1440} height={900} alt="FIREBRIDGE home page" />
+            <div class="absolute -bottom-5 -right-3 hidden w-[40%] sm:block">
+              <Shot src="/images/firebridge/copilot" widths={[480, 880]} width={880} height={830} alt="FIREBRIDGE AI copilot answering with checked numbers" sizes="280px" />
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-line px-6 py-6 sm:px-8 lg:px-10">
+          <ArchFlow steps={featured.architecture} />
+        </div>
+        <div class="grid border-t border-line md:grid-cols-3">
+          {featured.decisions.map((dec, i) => (
+            <div class="border-line p-6 sm:p-8 md:border-l md:first:border-l-0 [&:not(:first-child)]:border-t md:[&:not(:first-child)]:border-t-0">
+              <p class="label m-0">decision {String(i + 1).padStart(2, '0')}</p>
+              <p class="m-0 mt-2 text-[16.5px] font-semibold leading-snug tracking-tight">{dec.title}</p>
+              <p class="m-0 mt-2 text-[14.5px] leading-relaxed text-fg-2">{dec.body}</p>
+            </div>
+          ))}
+        </div>
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line bg-surface-2/60 px-6 py-4 sm:px-8 lg:px-10">
+          <span class="label">code</span>
+          {featured.links.repos.map((r) => <a href={r.href} target="_blank" rel="noopener" class="link text-[14px]"><Icon name="github" /> {r.label}</a>)}
+        </div>
+      </article>
+
+      <!-- DOCKER INSPECTOR -->
+      <article class="card mt-6 overflow-hidden" data-reveal>
+        <div class="grid gap-10 p-6 sm:p-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:p-10">
+          <div class="order-2 lg:order-1 lg:self-center">
+            <Shot src="/images/docker-inspector/overview-dark" widths={[800, 1440]} width={1440} height={900} alt="Docker Inspector overview: containers, CPU, memory and disk usage" />
+          </div>
+          <div class="order-1 flex flex-col lg:order-2">
+            <div class="flex items-center gap-3">
+              <img src="/images/docker-inspector/icon.svg" alt="" width="36" height="36" class="size-9" loading="lazy" />
+              <span class="rounded-md border border-cyan/30 bg-cyan/8 px-2 py-1 font-mono text-[11.5px] text-cyan">{dockerInspector.badge}</span>
+            </div>
+            <h3 class="mt-5 text-[clamp(30px,4vw,44px)] tracking-[-.045em]">{dockerInspector.name}</h3>
+            <p class="mt-2 text-[clamp(18px,2vw,21px)] leading-snug text-fg">{dockerInspector.tagline}</p>
+            <p class="mt-4 text-[15.5px] text-fg-2">{dockerInspector.summary}</p>
+            <ul class="mt-5 grid list-none gap-2.5 p-0">
+              {dockerInspector.highlights.map((h) => (
+                <li class="flex gap-3 text-[14.5px] text-fg-2"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>{h}</span></li>
+              ))}
+            </ul>
+            <div class="mt-8 flex flex-wrap gap-3 lg:mt-auto lg:pt-8">
+              <a href={dockerInspector.links.caseStudy} class="btn btn-primary">Read the case study <Icon name="arrow-right" /></a>
+              <a href={dockerInspector.links.repo} target="_blank" rel="noopener" class="btn"><Icon name="github" /> Source</a>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-line px-6 py-6 sm:px-8 lg:px-10">
+          <ArchFlow steps={dockerInspector.architecture} />
+        </div>
+      </article>
+
+      <!-- MORE PROJECTS -->
+      <div class="mt-16" data-reveal>
+        <div class="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+          <h3 class="text-2xl">More projects</h3>
+          <p class="sql m-0 text-[12px]"><span class="c">-- {moreProjects.length} rows · streaming, ETL, ML research</span></p>
+        </div>
+        <div class="overflow-hidden rounded-[14px] border border-line bg-surface">
+          <table class="w-full border-collapse text-left">
+            <thead class="bg-surface-2">
+              <tr>
+                <th class="label px-4 py-3 font-normal sm:px-5">project</th>
+                <th class="label hidden px-4 py-3 font-normal md:table-cell">pipeline</th>
+                <th class="label px-4 py-3 text-right font-normal sm:px-5">code</th>
+              </tr>
+            </thead>
+            <tbody>
+              {moreProjects.map((p) => (
+                <tr class="border-t border-line align-top transition-colors hover:bg-surface-2/60">
+                  <td class="px-4 py-4 sm:px-5">
+                    <span class="block font-medium text-fg">{p.name}</span>
+                    <span class="mt-0.5 block text-[14px] text-fg-2">{p.note}</span>
+                    <span class="mt-2 block font-mono text-[12px] text-muted md:hidden">{p.flow.join(' → ')}</span>
+                  </td>
+                  <td class="hidden px-4 py-4 md:table-cell">
+                    <span class="flex flex-wrap items-center gap-1.5 font-mono text-[12px] text-fg-2">
+                      {p.flow.map((f, i) => (
+                        <>
+                          {i > 0 && <span class="text-muted">→</span>}
+                          <span class="rounded border border-line bg-surface-2 px-1.5 py-0.5">{f}</span>
+                        </>
+                      ))}
+                    </span>
+                  </td>
+                  <td class="px-4 py-4 text-right sm:px-5">
+                    {p.href ? (
+                      <a href={p.href} target="_blank" rel="noopener" class="inline-grid size-8 place-items-center rounded-lg border border-line text-fg-2 transition-colors hover:text-primary" aria-label={`${p.name} on GitHub`}><Icon name="github" class="size-4" /></a>
+                    ) : <span class="font-mono text-[12px] text-muted" title="No public repository">—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STACK ================= -->
+  <section id="stack" class="section border-t border-line bg-bg-2/50">
+    <div class="wrap">
+      <header class="mb-10 grid max-w-3xl gap-3" data-reveal>
+        <SqlKicker q="SELECT layer, tool, used_at FROM stack JOIN experience USING (tool);" />
+        <h2 class="section-title">The stack, layer by layer</h2>
+        <p class="m-0 text-lg text-fg-2">Organised like the platforms I build: records flow through each layer below. Hover or tap a tool to trace its lineage, where I actually used it.</p>
+      </header>
+      <div class="mb-6" data-reveal>
+        <PipelineSim />
+      </div>
+      <div class="card p-6 sm:p-8 lg:p-10" data-reveal>
+        <StackLineage />
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= EXPERIENCE ================= -->
+  <section id="experience" class="section border-t border-line">
+    <div class="wrap">
+      <header class="mb-10 grid max-w-3xl gap-3" data-reveal>
+        <SqlKicker q="SELECT * FROM experience ORDER BY started_at DESC;" />
+        <h2 class="section-title">Experience</h2>
+      </header>
+
+      <ol class="relative m-0 list-none p-0">
+        {experience.map((job) => (
+          <li class="relative grid grid-cols-[minmax(0,1fr)] gap-4 pb-12 last:pb-0 md:grid-cols-[200px_minmax(0,1fr)] md:gap-10" data-reveal>
+            <div class="md:pt-1">
+              <p class="tnum m-0 font-mono text-[13px] text-fg">{job.period}</p>
+              <p class="m-0 mt-1 text-sm text-muted">{job.place}</p>
+            </div>
+            <div class="relative md:border-l md:border-line md:pl-10">
+              <span class:list={['absolute -left-[5.5px] top-2 hidden size-[11px] rounded-full border-2 md:block', job.current ? 'border-primary bg-primary shadow-[0_0_0_4px_color-mix(in_srgb,var(--primary)_20%,transparent)]' : 'border-line-strong bg-bg']} aria-hidden="true"></span>
+              <h3 class="text-[22px] tracking-tight">
+                {job.role} <span class="text-muted">@</span> <span class="text-primary">{job.company}</span>
+                {job.current && <span class="ml-2 inline-flex translate-y-[-3px] items-center gap-1.5 rounded-md border border-green/30 bg-green/8 px-1.5 py-0.5 align-middle font-mono text-[11px] font-normal tracking-normal text-green">current</span>}
+              </h3>
+              {job.flow && (
+                <div class="mt-5 rounded-xl border border-line bg-surface p-4">
+                  <ArchFlow steps={job.flow.map((name) => ({ name }))} label="Platform at a glance (simplified)" />
+                </div>
+              )}
+              <ul class="mt-5 grid list-none gap-2.5 p-0">
+                {job.points.map((pt) => (
+                  <li class="relative pl-5 text-[15.5px] leading-relaxed text-fg-2 before:absolute before:left-0 before:top-[.72em] before:h-px before:w-2.5 before:bg-primary">{pt}</li>
+                ))}
+              </ul>
+              <ul class="mt-5 flex list-none flex-wrap gap-2 p-0">{job.stack.map((s) => <li class="tag">{s}</li>)}</ul>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p class="mt-10 text-sm text-muted md:pl-[240px]">{earlier}</p>
+
+      <div class="mt-16 grid items-start gap-6 lg:grid-cols-2" data-reveal>
+        <div class="card p-6 sm:p-8">
+          <p class="label m-0">education</p>
+          <ol class="m-0 mt-4 grid list-none p-0">
+            {education.map((e) => (
+              <li class="flex items-start justify-between gap-4 border-t border-line py-3.5 first:border-t-0 first:pt-0">
+                <span>
+                  <span class="block font-medium leading-snug">{e.degree}</span>
+                  <span class="block text-sm text-fg-2">{e.school}</span>
+                </span>
+                <span class="tnum shrink-0 font-mono text-[12px] text-muted">{e.period}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div class="card p-6 sm:p-8">
+          <p class="label m-0">certifications &amp; awards</p>
+          <ul class="m-0 mt-4 grid list-none p-0">
+            {credentials.map((c, i) => (
+              <li class="flex items-start gap-3 border-t border-line py-3.5 first:border-t-0 first:pt-0">
+                <Icon name="award" class={i === 0 ? 'mt-0.5 size-[18px] shrink-0 text-primary' : 'mt-0.5 size-[18px] shrink-0 text-muted'} />
+                <span>
+                  <span class="block font-medium leading-snug">{c.name}</span>
+                  <span class="block font-mono text-[12px] text-muted">{c.issuer}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div class="mt-4 max-w-[300px]">
+            <Shot src="/images/misc/nasa-certificate" widths={[600, 1056]} width={1056} height={816} alt="NASA Space Apps Challenge 2026 certificate: Galactic Problem Solver, awarded to Mohamed El Korchi" sizes="300px" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ABOUT ================= -->
+  <section id="about" class="section border-t border-line bg-bg-2/50">
+    <div class="wrap">
+      <header class="mb-10 grid max-w-3xl gap-3" data-reveal>
+        <SqlKicker q="SELECT bio, principles FROM engineers WHERE name = 'Mohamed' LIMIT 1;" />
+        <h2 class="section-title">About</h2>
+      </header>
+      <div class="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16">
+        <div data-reveal>
+          {about.paragraphs.map((p) => <p class="mb-4 mt-0 text-[17px] leading-relaxed text-fg-2">{p}</p>)}
+          <dl class="m-0 mt-8 grid gap-px overflow-hidden rounded-[14px] border border-line bg-line sm:grid-cols-2">
+            {about.facts.map((f) => (
+              <div class="bg-surface px-4 py-3.5">
+                <dt class="label">{f.label}</dt>
+                <dd class="m-0 mt-1 text-[15px] text-fg">{f.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+        <div data-reveal>
+          <p class="label m-0 mb-4">how I build</p>
+          <ol class="m-0 grid list-none gap-3 p-0">
+            {principles.map((pr, i) => (
+              <li class="card flex gap-4 p-5">
+                <span class="font-mono text-[13px] text-primary">{String(i + 1).padStart(2, '0')}</span>
+                <span>
+                  <span class="block font-semibold tracking-tight">{pr.title}</span>
+                  <span class="mt-1 block text-[14.5px] leading-relaxed text-fg-2">{pr.body}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CONTACT ================= -->
+  <section id="contact" class="section border-t border-line">
+    <div class="wrap">
+      <div class="card relative overflow-hidden p-6 sm:p-10 lg:p-14" data-reveal>
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_90%_at_100%_0%,var(--glow-1),transparent_70%)]" aria-hidden="true"></div>
+        <div class="relative grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,.9fr)]">
+          <div>
+            <p class="m-0 font-mono text-[12.5px] text-primary">contact</p>
+            <h2 class="mt-3 text-[clamp(32px,4.8vw,56px)] tracking-[-.045em]">Got data that needs a pipeline?</h2>
+            <p class="mt-4 max-w-xl text-lg text-fg-2">Platforms, pipelines or AI on top of your data: I'd like to hear about it. Email is the fastest way to reach me.</p>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a href={`mailto:${site.email}`} class="btn btn-primary"><Icon name="mail" /> {site.email}</a>
+              <a href={site.linkedin} target="_blank" rel="me noopener" class="btn"><Icon name="linkedin" /> LinkedIn</a>
+              <a href={site.github} target="_blank" rel="me noopener" class="btn"><Icon name="github" /> GitHub</a>
+            </div>
+          </div>
+          <pre class="sql m-0 overflow-x-auto rounded-xl border border-line bg-bg-2 p-5 text-[13.5px] leading-7" aria-label="SQL: insert a message into my inbox"><span class="k">INSERT INTO</span> inbox (sender, subject, body)
+<span class="k">VALUES</span> (
+  <span class="s">'you'</span>,
+  <span class="s">'Let''s build a data platform'</span>,
+  <span class="s">'Here is our problem…'</span>
+);
+<span class="c">-- 1 row inserted</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
