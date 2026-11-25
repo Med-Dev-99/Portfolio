@@ -11,7 +11,7 @@ export const contact = {
 };
 
 export const summary =
-  'Data Engineer with 3+ years building scalable data platforms, ELT pipelines and real-time systems in production with Apache NiFi, Azure Databricks (Spark), ADLS Gen2, Airflow, dbt and PostgreSQL/PostGIS. Recently built the data platform and grounded AI agent of FIREBRIDGE for the NASA Space Apps Challenge 2026: 666.9M satellite records acquired, audited and served through versioned releases. Strong foundation in machine learning, NLP and LLM agents.';
+  'Data Engineer with 3+ years building scalable data platforms, ELT pipelines and real-time systems in production with Apache NiFi, Azure Databricks (Spark), ADLS Gen2, Airflow, dbt, FastAPI and PostgreSQL/PostGIS. Built Freshtrack’s real-time container tracking and schedules platform over 24 shipping carriers. Recently built the data platform and grounded AI agent of FIREBRIDGE for the NASA Space Apps Challenge 2026: 666.9M satellite records acquired, audited and served through versioned releases. Strong foundation in machine learning, NLP and LLM agents.';
 
 export const projects = [
   {
