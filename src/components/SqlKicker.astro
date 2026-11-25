@@ -1,0 +1,24 @@
+---
+/**
+ * Section kicker written as a tiny SQL statement, e.g.
+ *   <SqlKicker q="SELECT * FROM projects WHERE featured;" />
+ * Keywords, strings, numbers and -- comments are highlighted.
+ */
+interface Props { q: string; class?: string }
+const { q, class: className } = Astro.props;
+
+const KEYWORDS = /\b(SELECT|FROM|WHERE|ORDER BY|GROUP BY|DESC|ASC|AND|OR|NOT|INSERT INTO|VALUES|LIMIT|AS|IN|IS|NULL|TRUE|FALSE|JOIN|ON|COUNT|WITH)\b/g;
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function highlight(sql: string) {
+  const [code, comment] = sql.split(/(?=--)/);
+  let html = esc(code)
+    .replace(/('[^']*')/g, '<span class="s">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="n">$1</span>')
+    .replace(KEYWORDS, '<span class="k">$1</span>');
+  if (comment) html += `<span class="c">${esc(comment)}</span>`;
+  return html;
+}
+---
+
+<p class:list={['sql m-0', className]}><span class="select-none text-muted">&gt; </span><Fragment set:html={highlight(q)} /></p>
