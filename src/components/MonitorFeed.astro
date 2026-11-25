@@ -1,0 +1,128 @@
+---
+/**
+ * Visual for the tracking platform: a carrier marquee and a simulated feed modelled on the
+ * platform's monitoring console (requests, carrier calls, cache hits, SSE slots, IoT readings,
+ * admission-gate 429s). Rows are rendered server-side, so it is complete without JavaScript;
+ * the script adds a new row every ~1.4 s while visible.
+ */
+import { platform } from '../data/profile';
+
+type Row = { kind: string; target: string; status: string; tone: 'ok' | 'warn' | 'info' | 'ai'; note: string; ms: string };
+
+const initial: Row[] = [
+  { kind: 'GET', target: '/api/schedules CNSHA→MAPTM', status: '200', tone: 'ok', note: 'cache hit', ms: '11 ms' },
+  { kind: 'CALL', target: 'Hapag-Lloyd · schedules', status: '200', tone: 'info', note: '14 sailings', ms: '2.4 s' },
+  { kind: 'SSE', target: 'slot · ONE', status: 'ok', tone: 'info', note: '6 sailings streamed', ms: '3.1 s' },
+  { kind: 'GET', target: '/v2/events (DCSA)', status: '200', tone: 'ok', note: 'normalised', ms: '46 ms' },
+  { kind: 'IOT', target: 'cold-chain tracker', status: 'ok', tone: 'ai', note: '4.2 °C · 61 %RH', ms: '0.9 s' },
+  { kind: 'GET', target: '/api/track MSCU·······', status: '200', tone: 'ok', note: 'fallback → MSC', ms: '1.8 s' },
+];
+const half = Math.ceil(platform.carriers.length / 2);
+const rowsA = platform.carriers.slice(0, half);
+const rowsB = platform.carriers.slice(half);
+---
+
+<div class="monitor overflow-hidden rounded-xl border border-line bg-bg-2" data-monitor>
+  <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+    <span class="flex items-center gap-2 font-mono text-[12px] text-fg">
+      <span class="relative flex size-2"><span class="mon-ping absolute inline-flex size-full rounded-full bg-green opacity-60"></span><span class="relative inline-flex size-2 rounded-full bg-green"></span></span>
+      /monitor<span class="text-muted">/live</span>
+    </span>
+    <span class="rounded border border-line px-1.5 py-px font-mono text-[10px] uppercase tracking-wider text-muted">simulated</span>
+  </div>
+
+  <div class="mon-marquee border-b border-line py-2.5" aria-label={`Carriers integrated: ${platform.carriers.join(', ')}`}>
+    {[rowsA, rowsB].map((row, i) => (
+      <div class:list={['mon-track flex w-max gap-2', i === 1 && 'mon-reverse mt-2']} aria-hidden="true">
+        {[...row, ...row].map((c) => (
+          <span class="rounded-md border border-line bg-surface px-2 py-0.5 font-mono text-[11.5px] text-fg-2">{c}</span>
+        ))}
+      </div>
+    ))}
+  </div>
+
+  <ol class="m-0 list-none p-0 font-mono text-[11.5px]" data-monitor-rows>
+    {initial.map((r) => (
+      <li class="mon-row grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-line/70 px-4 py-2 last:border-b-0 sm:grid-cols-[42px_minmax(0,1fr)_minmax(0,auto)_52px]">
+        <span class:list={['mon-kind', `k-${r.kind.toLowerCase()}`]}>{r.kind}</span>
+        <span class="truncate text-fg">{r.target}</span>
+        <span class="hidden truncate text-muted sm:block"><span class:list={['mon-status', `t-${r.tone}`]}>{r.status}</span> · {r.note}</span>
+        <span class="tnum text-right text-muted">{r.ms}</span>
+      </li>
+    ))}
+  </ol>
+</div>
+
+<style is:global>
+  .monitor .mon-kind { font-weight: 600; }
+  .monitor .k-get { color: var(--primary); }
+  .monitor .k-call { color: var(--cyan); }
+  .monitor .k-sse { color: var(--violet); }
+  .monitor .k-iot { color: var(--green); }
+  .monitor .k-429 { color: var(--amber); }
+  .monitor .t-ok { color: var(--green); }
+  .monitor .t-info { color: var(--cyan); }
+  .monitor .t-ai { color: var(--green); }
+  .monitor .t-warn { color: var(--amber); }
+  .monitor .mon-track { animation: mon-scroll 48s linear infinite; }
+  .monitor .mon-reverse { animation-direction: reverse; animation-duration: 56s; }
+  .monitor .mon-marquee { mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .monitor .mon-row.is-new { animation: mon-in .45s cubic-bezier(.2, .7, .2, 1); background: color-mix(in srgb, var(--primary) 7%, transparent); transition: background-color 1.2s; }
+  .monitor .mon-ping { animation: mon-ping 1.8s cubic-bezier(0, 0, .2, 1) infinite; }
+  @keyframes mon-scroll { to { transform: translateX(-50%); } }
+  @keyframes mon-in { from { opacity: 0; transform: translateY(-8px); } }
+  @keyframes mon-ping { 75%, 100% { transform: scale(2.2); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .monitor .mon-track { animation: none; flex-wrap: wrap; width: auto; }
+  }
+</style>
+
+<script>
+  const LANES = ['CNSHA→MAPTM', 'NLRTM→MACAS', 'SGSIN→ESALG', 'DEHAM→MAPTM', 'CNNGB→NLRTM', 'ESVLC→USNYC', 'MAPTM→BEANR', 'KRPUS→DEHAM'];
+  const CARRIERS = ['Hapag-Lloyd', 'ONE', 'ZIM', 'Evergreen', 'COSCO', 'HMM', 'Yang Ming', 'PIL', 'Grimaldi', 'Arkas', 'KMTC', 'SITC', 'OOCL'];
+  const PREFIX = ['MSCU', 'HLXU', 'CMAU', 'TCNU', 'SEGU', 'MRKU', 'ONEU'];
+  const pick = <T,>(a: T[]) => a[(Math.random() * a.length) | 0];
+  const n = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
+
+  type Row = { kind: string; target: string; status: string; tone: string; note: string; ms: string };
+  const gens: [number, () => Row][] = [
+    [30, () => ({ kind: 'GET', target: `/api/schedules ${pick(LANES)}`, status: '200', tone: 'ok', note: 'cache hit', ms: `${Math.round(n(6, 40))} ms` })],
+    [22, () => ({ kind: 'CALL', target: `${pick(CARRIERS)} · schedules`, status: '200', tone: 'info', note: `${Math.round(n(3, 18))} sailings`, ms: `${n(1.6, 6).toFixed(1)} s` })],
+    [12, () => ({ kind: 'SSE', target: `slot · ${pick(CARRIERS)}`, status: 'ok', tone: 'info', note: `${Math.round(n(2, 12))} sailings streamed`, ms: `${n(2, 7).toFixed(1)} s` })],
+    [12, () => ({ kind: 'GET', target: `/api/track ${pick(PREFIX)}·······`, status: '200', tone: 'ok', note: Math.random() < 0.3 ? 'fallback carrier' : `${Math.round(n(6, 24))} events`, ms: `${n(0.4, 3).toFixed(1)} s` })],
+    [8, () => ({ kind: 'GET', target: '/v2/events (DCSA)', status: '200', tone: 'ok', note: 'normalised', ms: `${Math.round(n(20, 90))} ms` })],
+    [10, () => ({ kind: 'IOT', target: pick(['cold-chain tracker', 'truck tracker']), status: 'ok', tone: 'ai', note: `${n(2, 7).toFixed(1)} °C · ${Math.round(n(45, 80))} %RH`, ms: `${n(0.4, 1.6).toFixed(1)} s` })],
+    [6, () => ({ kind: '429', target: 'admission gate full', status: '429', tone: 'warn', note: 'Retry-After 15 s', ms: '1 ms' })],
+  ];
+  const total = gens.reduce((s, [w]) => s + w, 0);
+  const next = () => { let r = Math.random() * total; for (const [w, g] of gens) { if ((r -= w) <= 0) return g(); } return gens[0][1](); };
+
+  function render(row: Row) {
+    const li = document.createElement('li');
+    li.className = 'mon-row is-new grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-line/70 px-4 py-2 last:border-b-0 sm:grid-cols-[42px_minmax(0,1fr)_minmax(0,auto)_52px]';
+    const cell = (cls: string, text: string) => { const s = document.createElement('span'); s.className = cls; s.textContent = text; return s; };
+    li.append(cell(`mon-kind k-${row.kind.toLowerCase()}`, row.kind), cell('truncate text-fg', row.target));
+    const meta = cell('hidden truncate text-muted sm:block', ` · ${row.note}`);
+    meta.prepend(cell(`mon-status t-${row.tone}`, row.status));
+    li.append(meta, cell('tnum text-right text-muted', row.ms));
+    return li;
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-monitor]').forEach((root) => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const list = root.querySelector<HTMLOListElement>('[data-monitor-rows]')!;
+    const max = list.children.length;
+    let timer = 0;
+    const tick = () => {
+      const li = render(next());
+      list.prepend(li);
+      while (list.children.length > max) list.lastElementChild!.remove();
+      setTimeout(() => li.classList.remove('is-new'), 900);
+      timer = window.setTimeout(tick, n(900, 1900));
+    };
+    let inView = false;
+    const resume = () => { clearTimeout(timer); if (inView && !document.hidden) timer = window.setTimeout(tick, 600); };
+    new IntersectionObserver(([e]) => { inView = e.isIntersecting; resume(); }).observe(root);
+    document.addEventListener('visibilitychange', resume);
+  });
+</script>
