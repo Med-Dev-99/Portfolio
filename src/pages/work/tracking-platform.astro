@@ -1,0 +1,208 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import ArchFlow from '../../components/ArchFlow.astro';
+import MonitorFeed from '../../components/MonitorFeed.astro';
+import CaseHeader from '../../components/CaseHeader.astro';
+import CaseSection from '../../components/CaseSection.astro';
+import { platform } from '../../data/profile';
+
+const serves = [
+  {
+    icon: 'layers', title: 'Sailing schedules',
+    points: [
+      'Search any lane across carriers in parallel',
+      'Results stream in carrier by carrier over Server-Sent Events, with a polling fallback',
+      'DCSA point-to-point routing, port autocomplete and carrier coverage',
+      'Ready-made Python and JavaScript clients',
+    ],
+  },
+  {
+    icon: 'activity', title: 'Container tracking',
+    points: [
+      'Preferred carrier with automatic fallback to the right one',
+      'Every extracted event gets a canonical meaning; nothing is dropped for a missing timezone or seconds',
+      'DCSA-standard event objects alongside the service’s own format',
+      'ISO 6346 check-digit validation of container numbers',
+    ],
+  },
+  {
+    icon: 'radio', title: 'Truck & cold-chain IoT trackers',
+    points: [
+      'Three tracker providers behind one endpoint',
+      'Temperature, humidity, light, shock and tilt, battery and location track',
+      'Thresholds, alarm history and trip-wide alert counts',
+      'Up to 60 days of history per device',
+    ],
+  },
+  {
+    icon: 'globe', title: 'Vessels & costs',
+    points: [
+      'Vessel position, voyage and particulars by IMO or name',
+      'Scheduled vessel sync for current orders',
+      'Demurrage calculator and lane tariffs',
+    ],
+  },
+] as const;
+
+const loadRows = [
+  ['Same popular lane, 50 / 100 / 300 users', 'Cache hits', '100% / 100% / 99.7% served in 3–5 s'],
+  ['50–100 different warm lanes', 'Mixed hits', '100% / 84% served'],
+  ['50–100 brand-new lanes at once', 'Live carrier fan-out', 'Bounded: finished lanes return, the rest get a clean retry signal'],
+  ['DCSA endpoint', 'Cached', 'under 0.1 s'],
+];
+
+const perf = [
+  { value: '62/s', label: 'searches served on a popular lane' },
+  { value: '4–25×', label: 'faster warm than cold' },
+  { value: '27%', label: 'peak RAM of an 8 GB cap' },
+  { value: '8', label: 'live fan-outs at once; the rest get Retry-After' },
+];
+
+const monitorTabs = [
+  ['Overview', 'Totals, outcomes over time, the slowest 5%, recent events'],
+  ['Live', 'Requests in progress with their current step, carrier calls awaiting an answer, queue depths'],
+  ['Endpoints', 'Calls, success, failures and latency per route, carrier host or carrier'],
+  ['Requests & carrier calls', 'Searchable log with headers, bodies and timing for each exchange'],
+  ['Events', 'Health changes, admin actions and lookup steps'],
+  ['Data', 'Database size, retention and write health'],
+];
+
+const reliability = [
+  { title: 'Every wait has a bound', body: 'An admission gate caps live fan-outs, every fetch and job has a deadline, and identical submissions reuse one job instead of starting another.' },
+  { title: 'Warm sessions', body: 'Sessions, logins and city indexes are set up once and reused, so nobody pays the launch and validation cost twice: 40 s → 10 s on repeat searches through browser-based carriers.' },
+  { title: 'Polite to carriers', body: 'Per-carrier pacing and back-off when a carrier rate-limits bursts, plus per-client API rate limits with JWT or cookie authentication.' },
+  { title: 'Watched around the clock', body: 'Canary checks run in the background and email alerts fire when the service or one of its dependencies degrades.' },
+];
+---
+
+<Base
+  title="Container Tracking & Schedules Platform: case study · Mohamed El Korchi"
+  description="A real-time API over 24 shipping carriers and IoT trackers: schedules, container tracking and cold-chain data, normalised to DCSA, cached, load-tested and monitored end to end. Built at Freshtrack."
+  image="/og-tracking-platform.png"
+>
+  <CaseHeader
+    query="SELECT * FROM case_studies WHERE project = 'tracking-platform';"
+    title="Tracking & Schedules Platform"
+    subtitle="One real-time API over 24 shipping carriers and truck and cold-chain IoT trackers: collected on demand, normalised, cached and monitored end to end."
+    facts={[
+      { label: 'My role', value: 'Designed and built it end to end (1,412 of 1,421 commits)' },
+      { label: 'Company', value: 'Freshtrack · 2026' },
+      { label: 'Stack', value: 'Python · FastAPI · Playwright · SQLite' },
+      { label: 'Runs on', value: 'Docker Compose behind Nginx' },
+    ]}
+    links={[]}
+  />
+
+  <div class="wrap pb-16">
+    <div class="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div>
+        <p class="label m-0">coverage</p>
+        <ul class="m-0 mt-4 flex list-none flex-wrap gap-2 p-0">
+          {platform.carriers.map((c) => <li class="tag">{c}</li>)}
+          <li class="tag border-green/40 text-green">+ 3 IoT tracker providers</li>
+        </ul>
+        <p class="mt-5 text-[15px] text-fg-2">The source code is private, so this page shows what the platform does and the numbers from its own load-test reports. The feed on the right is a simulation modelled on the real monitoring console.</p>
+      </div>
+      <MonitorFeed />
+    </div>
+  </div>
+
+  <CaseSection label="01 · The problem" title="24 carriers, 24 ways to say “loaded”.">
+    <div class="prose-case max-w-3xl text-[17px] leading-relaxed">
+      <p>Freshtrack’s customers need to know when ships sail, where their containers are and how the cargo is doing inside the truck. Every carrier publishes that differently: public APIs, logged-in web apps or fixed catalogues, each with its own codes, time formats, limits and failure modes. Some answer in milliseconds, others in a minute.</p>
+      <p>The goal was <strong>one API</strong> that answers fast when it can, never hangs when it can’t, speaks one event language and explains itself when a carrier fails.</p>
+    </div>
+  </CaseSection>
+
+  <CaseSection label="02 · Architecture" title="Collect, normalise, cache, serve, watch.">
+    <div class="card p-5 sm:p-6"><ArchFlow steps={platform.architecture} label="Request path" /></div>
+    <div class="prose-case mt-8 max-w-3xl text-[17px] leading-relaxed">
+      <p>Each carrier has its own collector: an HTTP client where the carrier has an API, a warm browser session where it only has a website. Their answers are normalised into <strong>one event language</strong> with canonical meanings, and exposed both in the service’s own format and as <strong>DCSA-standard</strong> objects.</p>
+      <p>A cache sits in front of every carrier and an admission gate in front of every live fan-out. FastAPI serves REST, Server-Sent Events for progressive results and DCSA routing. A telemetry layer records every exchange for the monitoring console, and canary checks send email alerts when a carrier or the service degrades.</p>
+    </div>
+  </CaseSection>
+
+  <CaseSection label="03 · What it serves" title="Schedules, containers, trucks, vessels.">
+    <div class="grid gap-4 md:grid-cols-2">
+      {serves.map((s) => (
+        <article class="card p-6">
+          <span class="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Icon name={s.icon} class="size-5" /></span>
+          <h3 class="mt-4 text-xl">{s.title}</h3>
+          <ul class="m-0 mt-3 grid list-none gap-2 p-0">
+            {s.points.map((pt) => <li class="flex gap-2.5 text-[14.5px] leading-snug text-fg-2"><Icon name="check" class="mt-0.5 size-4 shrink-0 text-green" /><span>{pt}</span></li>)}
+          </ul>
+        </article>
+      ))}
+    </div>
+  </CaseSection>
+
+  <CaseSection label="04 · Performance" title="Measured under load.">
+    <p class="mt-0 max-w-3xl text-[17px] leading-relaxed text-fg-2">Load-tested in a container capped at <strong class="text-fg">4 CPUs and 8 GB</strong> with 17 carriers active: about 700 test searches, 35,000 status polls and per-second resource sampling.</p>
+    <div class="mt-6 overflow-x-auto rounded-[14px] border border-line">
+      <table class="w-full min-w-[620px] border-collapse text-left text-[14.5px]">
+        <thead class="bg-surface-2"><tr><th class="label px-4 py-3 font-normal">scenario</th><th class="label px-4 py-3 font-normal">path</th><th class="label px-4 py-3 font-normal">result</th></tr></thead>
+        <tbody>
+          {loadRows.map(([a, b, c]) => <tr class="border-t border-line bg-surface"><td class="px-4 py-3 font-medium text-fg">{a}</td><td class="px-4 py-3 text-muted">{b}</td><td class="px-4 py-3 text-fg-2">{c}</td></tr>)}
+        </tbody>
+      </table>
+    </div>
+    <dl class="m-0 mt-6 grid gap-px overflow-hidden rounded-[14px] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+      {perf.map((p) => (
+        <div class="flex flex-col bg-surface p-5">
+          <dd class="tnum order-1 m-0 text-3xl font-semibold tracking-tight">{p.value}</dd>
+          <dt class="order-2 mt-1.5 text-[14px] leading-snug text-fg-2">{p.label}</dt>
+        </div>
+      ))}
+    </dl>
+    <p class="mt-5 max-w-3xl text-[15px] text-fg-2">Cache-hit latency stays flat whatever the number of users. Only brand-new lanes cost real time, and that time is spent waiting on carrier websites. With 1,000 users on different new lanes, 8 run at once and the rest get an instant “busy, retry in 15 s”: no hanging, no crash.</p>
+  </CaseSection>
+
+  <CaseSection label="05 · Monitoring" title="Every exchange, recorded.">
+    <p class="mt-0 max-w-3xl text-[17px] leading-relaxed text-fg-2">A built-in console shows what the service received, what it asked each carrier, what came back and how long every step took. Selecting a run shows the request, each step and every carrier call in order. Looking up a container shows every request that named it, each carrier’s outcome, what is cached and whether its check digit is valid.</p>
+    <div class="mt-6 overflow-hidden rounded-[14px] border border-line">
+      {monitorTabs.map(([tab, what]) => (
+        <div class="grid gap-1 border-t border-line bg-surface px-5 py-3 first:border-t-0 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-6">
+          <span class="font-mono text-[13px] text-primary">{tab}</span>
+          <span class="text-[14.5px] text-fg-2">{what}</span>
+        </div>
+      ))}
+    </div>
+    <div class="mt-6 grid gap-4 md:grid-cols-2">
+      <div class="card p-6">
+        <h3 class="flex items-center gap-2.5 text-lg"><Icon name="clock" class="size-5 text-cyan" /> Almost free to record</h3>
+        <p class="m-0 mt-2 text-[14.5px] leading-relaxed text-fg-2">Requests only append to a queue; one writer thread batches inserts into SQLite. That costs about <strong class="text-fg">35 µs per inbound request</strong> and 0.1 ms per carrier call. Under pressure, bodies are skipped first and rows dropped next, and the overview says so.</p>
+      </div>
+      <div class="card p-6">
+        <h3 class="flex items-center gap-2.5 text-lg"><Icon name="shield" class="size-5 text-green" /> Private by design</h3>
+        <p class="m-0 mt-2 text-[14.5px] leading-relaxed text-fg-2">Authorization and cookie values are never stored, header values are kept only from an allow-list, secret-looking fields are masked and HTML is reduced to its visible text.</p>
+      </div>
+    </div>
+  </CaseSection>
+
+  <CaseSection label="06 · Reliability" title="Fails fast, recovers on its own.">
+    <div class="grid gap-4 md:grid-cols-2">
+      {reliability.map((r) => (
+        <div class="card p-6">
+          <p class="m-0 text-[17px] font-semibold tracking-tight">{r.title}</p>
+          <p class="m-0 mt-2 text-[14.5px] leading-relaxed text-fg-2">{r.body}</p>
+        </div>
+      ))}
+    </div>
+    <div class="card mt-6 p-6 sm:p-8">
+      <p class="label m-0">what load testing found</p>
+      <p class="m-0 mt-3 text-[16px] leading-relaxed text-fg-2">A rush of brand-new lanes froze the service. A crash dump traced it to a lock in the cache; after the fix, the same rush completed 50 of 50, and a unit test keeps it fixed. The same campaign found two broken carrier integrations (one carrier had changed its authentication, another failed on multi-word port names), both repaired, and a repeat-search path that relaunched a browser every time (now reused: 40 s → 10 s).</p>
+      <p class="m-0 mt-4 font-mono text-[12.5px] text-muted">2,000+ test functions · per-search JSON logs · 2-second resource samples</p>
+    </div>
+
+    <ul class="m-0 mt-8 flex list-none flex-wrap gap-2 p-0">{platform.stack.map((t) => <li class="tag">{t}</li>)}</ul>
+
+    <a href="/work/firebridge/" class="card group mt-12 flex items-center justify-between gap-6 p-6 transition-colors hover:border-line-strong sm:p-8">
+      <span>
+        <span class="label block">Next case study</span>
+        <span class="mt-2 block text-2xl font-semibold tracking-tight sm:text-3xl">FIREBRIDGE · NASA Space Apps 2026</span>
+      </span>
+      <span class="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-primary-ink transition-transform group-hover:translate-x-1"><Icon name="arrow-right" /></span>
+    </a>
+  </CaseSection>
+</Base>
