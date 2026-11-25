@@ -1,0 +1,181 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/*
+ * Design tokens. Light is the CSS default; /theme.js sets [data-theme] from the
+ * visitor's saved choice or system preference before first paint.
+ * Palette: cobalt (primary), cyan (raw data), violet (AI), green/amber/red (pipeline states).
+ */
+:root {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --bg-2: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #f4f6fa;
+  --line: #e3e7ee;
+  --line-strong: #cdd4df;
+  --text: #0a101d;
+  --text-2: #3b4557;
+  --muted: #667185;
+  --primary: #2f5bff;
+  --primary-strong: #1f47e6;
+  --primary-ink: #ffffff;
+  --cyan: #0891b2;
+  --violet: #7c3aed;
+  --green: #0f9f6e;
+  --amber: #c27803;
+  --red: #e5484d;
+  --dot: rgb(15 23 42 / .09);
+  --glow-1: rgb(47 91 255 / .10);
+  --glow-2: rgb(124 58 237 / .06);
+  --shadow: 0 1px 2px rgb(10 16 29 / .04), 0 14px 36px -18px rgb(10 16 29 / .18);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #060912;
+  --bg-2: #090e19;
+  --surface: #0c1220;
+  --surface-2: #111a2c;
+  --line: rgb(148 163 196 / .12);
+  --line-strong: rgb(148 163 196 / .22);
+  --text: #e8edf7;
+  --text-2: #aab5ca;
+  --muted: #7d899f;
+  --primary: #6d8bff;
+  --primary-strong: #8ea5ff;
+  --primary-ink: #050816;
+  --cyan: #38d5f2;
+  --violet: #a98bff;
+  --green: #3ddc97;
+  --amber: #f4b74a;
+  --red: #ff6b6b;
+  --dot: rgb(148 163 196 / .1);
+  --glow-1: rgb(109 139 255 / .13);
+  --glow-2: rgb(169 139 255 / .07);
+  --shadow: 0 1px 0 rgb(255 255 255 / .03) inset, 0 20px 50px -24px rgb(0 0 0 / .85);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--text);
+  --color-fg-2: var(--text-2);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-ink: var(--primary-ink);
+  --color-cyan: var(--cyan);
+  --color-violet: var(--violet);
+  --color-green: var(--green);
+  --color-amber: var(--amber);
+  --color-red: var(--red);
+  --shadow-card: var(--shadow);
+}
+
+@theme {
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --container-wrap: 1200px;
+  --ease-soft: cubic-bezier(.2, .7, .2, 1);
+}
+
+/* ---------- Base ---------- */
+@layer base {
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-bg font-sans text-fg antialiased;
+    font-size: 16px;
+    line-height: 1.65;
+    overflow-x: clip;
+  }
+  /* Dot-grid "graph paper" with a soft cobalt glow at the top of every page. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(55% 45% at 78% -5%, var(--glow-1), transparent 70%),
+      radial-gradient(40% 35% at 5% 0%, var(--glow-2), transparent 70%),
+      radial-gradient(var(--dot) 1px, transparent 1.2px) 0 0 / 22px 22px;
+    mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / .55) 40%, transparent 80%);
+  }
+  h1, h2, h3, h4 { @apply font-semibold; letter-spacing: -.035em; line-height: 1.06; text-wrap: balance; }
+  p { text-wrap: pretty; }
+  ::selection { background: color-mix(in srgb, var(--primary) 28%, transparent); }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 6px; }
+  figcaption { @apply mt-3 text-[13px] text-muted; }
+  code, kbd, .tnum { font-variant-numeric: tabular-nums; }
+}
+
+/* ---------- Components ---------- */
+@layer components {
+  .wrap { @apply mx-auto w-full max-w-wrap px-4 sm:px-6 lg:px-8; }
+
+  .section { @apply py-[clamp(72px,9vw,120px)]; }
+  .section-title { @apply text-[clamp(32px,4.4vw,52px)]; }
+
+  .btn {
+    @apply inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border border-line-strong bg-surface px-4.5 text-[15px] font-medium text-fg shadow-[0_1px_2px_rgb(10_16_29/.05)];
+    transition: transform .18s var(--ease-soft), background-color .18s, border-color .18s, color .18s;
+  }
+  .btn:hover { @apply -translate-y-px border-fg-2/40; }
+  .btn svg { @apply size-[17px] shrink-0; }
+  .btn-primary { @apply border-primary bg-primary text-primary-ink; box-shadow: 0 8px 24px -10px var(--primary); }
+  .btn-primary:hover { @apply border-primary-strong bg-primary-strong; }
+  .btn-sm { @apply h-9 px-3 text-sm; }
+
+  .tag {
+    @apply inline-flex h-6.5 items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2 font-mono text-[12px] text-fg-2;
+  }
+
+  .card { @apply relative rounded-[18px] border border-line bg-surface shadow-card; }
+
+  .shot {
+    @apply overflow-hidden rounded-xl border border-line bg-bg-2;
+    box-shadow: 0 24px 60px -30px rgb(10 16 29 / .45);
+  }
+
+  .link { @apply inline-flex items-center gap-1.5 font-medium text-fg underline decoration-line-strong underline-offset-4 transition-colors hover:text-primary hover:decoration-primary; }
+  .link svg { @apply size-4; }
+
+  /* SQL-flavoured section kickers. */
+  .sql { @apply font-mono text-[13px] leading-relaxed text-fg-2; }
+  .sql .k { color: var(--primary); }
+  .sql .s { color: var(--green); }
+  .sql .n { color: var(--amber); }
+  .sql .f { color: var(--violet); }
+  .sql .c { color: var(--muted); }
+
+  .label { @apply font-mono text-[11px] uppercase tracking-[.12em] text-muted; }
+
+  .prose-case p { @apply mb-4 text-fg-2; }
+  .prose-case strong { @apply font-semibold text-fg; }
+}
+
+/* ---------- Motion ---------- */
+/* Scroll-driven reveal in pure CSS. Browsers without support simply show the content. */
+@keyframes reveal { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-reveal] { animation: reveal linear both; animation-timeline: view(); animation-range: entry 0% cover 20%; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .001ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+
+@media print {
+  body::before, .no-print { display: none !important; }
+}
