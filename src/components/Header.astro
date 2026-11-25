@@ -1,0 +1,116 @@
+---
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import { site } from '../data/profile';
+
+const nav = [
+  { id: 'work', label: 'Work' },
+  { id: 'stack', label: 'Stack' },
+  { id: 'experience', label: 'Experience' },
+  { id: 'about', label: 'About' },
+  { id: 'contact', label: 'Contact' },
+];
+---
+
+<header class="site-header sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl backdrop-saturate-150">
+  <div class="wrap flex h-16 items-center justify-between gap-4">
+    <a href="/" class="group flex items-center gap-2.5" aria-label={`${site.name}, home`}>
+      <Logo class="size-8 transition-transform duration-300 group-hover:rotate-[-8deg]" />
+      <span class="flex flex-col leading-none">
+        <span class="text-[15px] font-semibold tracking-tight">{site.name}</span>
+        <span class="mt-1 font-mono text-[11px] text-muted">{site.role.toLowerCase()}</span>
+      </span>
+    </a>
+
+    <!-- Section links drawn as a pipeline run: pending → running → done as you scroll. -->
+    <nav aria-label="Primary" class="hidden lg:block">
+      <ol class="run m-0 flex list-none items-center p-0">
+        {nav.map((item, i) => (
+          <li class="flex items-center">
+            {i > 0 && <span class="run-edge mx-1 h-px w-5 bg-line-strong" aria-hidden="true"></span>}
+            <a href={`/#${item.id}`} data-stage={item.id} class="run-stage flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[14px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg">
+              <span class="run-dot" aria-hidden="true"></span>{item.label}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        data-theme-toggle
+        class="grid size-9 place-items-center rounded-[10px] border border-line bg-surface text-fg-2 transition-colors hover:text-fg"
+        aria-label="Toggle light and dark theme"
+        title="Toggle theme"
+      >
+        <Icon name="moon" class="size-[17px] dark:hidden" />
+        <Icon name="sun" class="hidden size-[17px] dark:block" />
+      </button>
+      <a href={site.resume} class="btn btn-primary btn-sm hidden sm:inline-flex" download>
+        <Icon name="download" />Resume
+      </a>
+      <button type="button" popovertarget="mobile-nav" class="grid size-9 place-items-center rounded-[10px] border border-line bg-surface text-fg-2 lg:hidden" aria-label="Open menu">
+        <Icon name="menu" class="size-[17px]" />
+      </button>
+    </div>
+  </div>
+  <div class="scroll-progress" aria-hidden="true"></div>
+
+  <!-- Mobile menu: native Popover API. -->
+  <nav id="mobile-nav" popover aria-label="Mobile" class="m-0 ml-auto h-dvh w-[min(84vw,340px)] border-l border-line bg-bg p-6 text-fg shadow-2xl backdrop:bg-black/40 backdrop:backdrop-blur-sm">
+    <div class="mb-10 flex items-center justify-between">
+      <Logo class="size-8" />
+      <button type="button" popovertarget="mobile-nav" popovertargetaction="hide" class="grid size-9 place-items-center rounded-[10px] border border-line" aria-label="Close menu">
+        <Icon name="x" class="size-[17px]" />
+      </button>
+    </div>
+    <ol class="m-0 grid list-none gap-1 p-0">
+      {nav.map((item, i) => (
+        <li>
+          <a href={`/#${item.id}`} class="flex items-baseline gap-3 rounded-xl px-3 py-3 text-2xl font-semibold tracking-tight hover:bg-surface-2">
+            <span class="font-mono text-xs font-normal text-primary">{String(i + 1).padStart(2, '0')}</span>{item.label}
+          </a>
+        </li>
+      ))}
+    </ol>
+    <a href={site.resume} class="btn btn-primary mt-8 w-full" download><Icon name="download" />Download resume</a>
+  </nav>
+</header>
+
+<style is:global>
+  .run-dot { width: 8px; height: 8px; border-radius: 999px; border: 1.5px solid var(--line-strong); transition: background-color .3s, border-color .3s, box-shadow .3s; }
+  .run-stage[data-state='done'] .run-dot { background: var(--green); border-color: var(--green); }
+  .run-stage[data-state='running'] { color: var(--text); }
+  .run-stage[data-state='running'] .run-dot { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent); }
+  li:has(.run-stage[data-state='done']) + li .run-edge { background: var(--green); }
+
+  .scroll-progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; transform-origin: 0 50%; transform: scaleX(0); background: linear-gradient(90deg, var(--cyan), var(--primary), var(--violet)); opacity: 0; }
+  @supports (animation-timeline: scroll()) {
+    .scroll-progress { opacity: 1; animation: progress linear both; animation-timeline: scroll(root); }
+  }
+  @keyframes progress { to { transform: scaleX(1); } }
+
+  #mobile-nav { transition: translate .3s var(--ease-soft), opacity .3s, overlay .3s allow-discrete, display .3s allow-discrete; translate: 100% 0; opacity: 0; }
+  #mobile-nav:popover-open { translate: 0 0; opacity: 1; }
+  @starting-style { #mobile-nav:popover-open { translate: 100% 0; opacity: 0; } }
+</style>
+
+<script>
+  // Mark each section as pending / running / done as the visitor scrolls (home page only).
+  const stages = [...document.querySelectorAll<HTMLAnchorElement>('[data-stage]')];
+  const sections = stages.map((a) => document.getElementById(a.dataset.stage!)).filter(Boolean) as HTMLElement[];
+  if (sections.length === stages.length) {
+    const update = () => {
+      const probe = innerHeight * 0.35;
+      let current = -1;
+      sections.forEach((s, i) => { if (s.getBoundingClientRect().top <= probe) current = i; });
+      const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
+      if (atBottom) current = sections.length - 1;
+      stages.forEach((a, i) => { a.dataset.state = i < current ? 'done' : i === current ? 'running' : 'pending'; });
+    };
+    let ticking = false;
+    addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { update(); ticking = false; }); } }, { passive: true });
+    update();
+  }
+</script>
