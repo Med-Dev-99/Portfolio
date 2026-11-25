@@ -7,7 +7,7 @@
  * Outputs (committed, served from /public):
  *   public/resume/Mohamed-El-Korchi-Resume.pdf
  *   public/og.png, public/og-firebridge.png, public/og-docker-inspector.png
- *   public/apple-touch-icon.png
+ *   public/favicon.ico, public/apple-touch-icon.png (from public/favicon.svg)
  *
  * Needs Chrome/Chromium. Set CHROME_PATH if it isn't found automatically.
  * Node ≥ 22.18 imports the .ts data files directly (type stripping).
@@ -153,7 +153,24 @@ const ogs = [
   { file: 'og-docker-inspector.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> case_studies <b>WHERE</b> project = <i>\'docker-inspector\'</i>;', title: 'Docker Inspector', subtitle: 'A flight recorder for your containers: crash diagnosis, 7-day history and configuration audits for Docker on Linux.', foot: 'mohamedelkorchi.com/work/docker-inspector' },
 ];
 
-const iconHtml = `<!doctype html><html><head><style>body{margin:0;width:180px;height:180px;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,rgba(109,139,255,.35),transparent 60%),#0c1220}</style></head><body>${dag(120)}</body></html>`;
+// Icons are rendered from public/favicon.svg, the single source of the browser-tab icon.
+const faviconSvg = readFileSync(join(root, 'public/favicon.svg'), 'utf8');
+const iconHtml = (size, svg) => `<!doctype html><html><head><style>html,body{margin:0;background:transparent}img{display:block;width:${size}px;height:${size}px}</style></head><body><img src="data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}"></body></html>`;
+
+/** Packs PNG images into a .ico file (PNG-compressed entries, supported by every current browser). */
+function ico(pngs) {
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0); header.writeUInt16LE(1, 2); header.writeUInt16LE(pngs.length, 4);
+  let offset = 6 + 16 * pngs.length;
+  const dir = pngs.map(({ size, data }) => {
+    const e = Buffer.alloc(16);
+    e.writeUInt8(size >= 256 ? 0 : size, 0); e.writeUInt8(size >= 256 ? 0 : size, 1);
+    e.writeUInt16LE(1, 4); e.writeUInt16LE(32, 6); e.writeUInt32LE(data.length, 8); e.writeUInt32LE(offset, 12);
+    offset += data.length;
+    return e;
+  });
+  return Buffer.concat([header, ...dir, ...pngs.map((p) => p.data)]);
+}
 
 /* ---------------- Render ---------------- */
 const browser = await chromium.launch({ executablePath: findChrome() });
@@ -176,9 +193,19 @@ try {
     console.log('✓', `public/${og.file}`);
   }
 
+  // favicon.ico (16/32/48) for browsers and tools that request it directly.
+  const pngs = [];
+  for (const size of [16, 32, 48]) {
+    await page.setViewportSize({ width: size, height: size });
+    await page.setContent(iconHtml(size, faviconSvg), { waitUntil: 'load' });
+    pngs.push({ size, data: await page.screenshot({ omitBackground: true }) });
+  }
+  writeFileSync(join(root, 'public/favicon.ico'), ico(pngs));
+  console.log('✓ public/favicon.ico');
+
+  // Apple touch icon: full-bleed square (iOS applies its own rounded mask).
   await page.setViewportSize({ width: 180, height: 180 });
-  await page.setContent(iconHtml, { waitUntil: 'load' });
-  await page.evaluate(() => document.fonts.ready);
+  await page.setContent(iconHtml(180, faviconSvg.replace('rx="8"', 'rx="0"')), { waitUntil: 'load' });
   await page.screenshot({ path: join(root, 'public/apple-touch-icon.png') });
   console.log('✓ public/apple-touch-icon.png');
 } finally {
