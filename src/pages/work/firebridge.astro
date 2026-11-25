@@ -1,0 +1,235 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import Shot from '../../components/Shot.astro';
+import CaseHeader from '../../components/CaseHeader.astro';
+import CaseSection from '../../components/CaseSection.astro';
+
+const archive = [
+  { name: 'Terra', instrument: 'MODIS 1 km', since: '2000', rows: 41.0 },
+  { name: 'Aqua', instrument: 'MODIS 1 km', since: '2002', rows: 74.2 },
+  { name: 'Suomi-NPP', instrument: 'VIIRS 375 m', since: '2012', rows: 298.0 },
+  { name: 'NOAA-20', instrument: 'VIIRS 375 m', since: '2018', rows: 173.3 },
+  { name: 'NOAA-21', instrument: 'VIIRS 375 m', since: '2023', rows: 73.4 },
+];
+const maxRows = Math.max(...archive.map((a) => a.rows));
+
+const flow = [
+  { stage: 'Sources', items: ['NASA FIRMS (MODIS, VIIRS)', 'NASA POWER weather', 'Dated reports'], icon: 'globe' },
+  { stage: 'Orchestrate', items: ['Airflow 3.3 · 10 DAGs', 'Retries, checkpoints', 'Resumable downloads'], icon: 'workflow' },
+  { stage: 'Lake', items: ['Immutable raw + SHA-256', 'Parquet · Arrow', 'DuckDB audits'], icon: 'layers' },
+  { stage: 'Serve', items: ['PostgreSQL 16 + PostGIS', 'Versioned releases', 'dbt models + tests'], icon: 'database' },
+  { stage: 'Product', items: ['Fastify API · BullMQ', 'React · MapLibre', 'Grounded AI agent'], icon: 'sparkles' },
+] as const;
+
+const results = [
+  { value: '666.9M', label: 'detection records archived', note: '5 satellites + Landsat, Nov 2000 → Nov 2026' },
+  { value: '23.3 GiB', label: 'audited Parquet archive', note: '4,202 download windows checked' },
+  { value: '4.7 s', label: 'to a ready analysis', note: 'Morocco, full year 2020; 25.5 s before' },
+  { value: '3,808', label: 'regional index windows', note: 'archive reads narrowed before exact geometry' },
+];
+
+const principles = [
+  { title: 'Missing data is never zero', body: 'A satellite that had not launched yet, or a superseded collection, is reported as unavailable, never as “no fire”.' },
+  { title: 'Detections are not fires', body: '100 detections are 100 satellite records. VIIRS counting 12× more than MODIS reflects 375 m pixels, not 12× more burning.' },
+  { title: 'Failures never replace a good release', body: 'Publication is immutable and versioned. A failed update leaves the previous release serving; every view reads the same pinned release.' },
+  { title: 'Every number is traceable', body: 'Map, calendar, exports and the AI explanation are checked for consistency against the same records, and every figure cites its source.' },
+];
+
+const ops = [
+  'GitHub Actions: lint, types, unit and UI tests, PostGIS + Redis integration tests',
+  'Secret scanning, dependency audit and HIGH/CRITICAL image vulnerability scans',
+  'Images published as immutable GHCR digests; real-container health checks gate activation',
+  'Restricted SSH gateway: CI can transfer images and activate, never open a shell',
+  'Read-only containers, dropped capabilities, private database and admin services',
+  'Database backup before each activation, one-command rollback to any loaded revision',
+];
+---
+
+<Base title="FIREBRIDGE: NASA Space Apps 2026 case study · Mohamed El Korchi" description="How I built FIREBRIDGE's data platform (Airflow, dbt, Parquet, PostGIS) and grounded AI agent: 666.9M NASA satellite fire detections into one comparable fire history." image="/og-firebridge.png">
+  <CaseHeader
+    query="SELECT * FROM case_studies WHERE project = 'firebridge';"
+    title="FIREBRIDGE"
+    subtitle="A consistent fire history across changing satellites. The satellites changed. Did the fires?"
+    facts={[
+      { label: 'My role', value: 'Built the data platform and AI agent; main contributor to the web app' },
+      { label: 'Team', value: 'Astra Mind · team of 4' },
+      { label: 'Challenge', value: 'Harmonization of MODIS and VIIRS Hot Spots' },
+      { label: 'Status', value: 'Live in production with CI/CD' },
+    ]}
+    links={[
+      { label: 'Open live app', href: 'https://ogote.com', icon: 'arrow-up-right' },
+      { label: 'Data platform', href: 'https://github.com/Nasa-hackathon-FIREBRIDGE/FireBridge-DataPlatform', icon: 'github' },
+      { label: 'Web app', href: 'https://github.com/Nasa-hackathon-FIREBRIDGE/FireBridge-App', icon: 'github' },
+      { label: 'AI agent', href: 'https://github.com/Nasa-hackathon-FIREBRIDGE/FireBridge-AI', icon: 'github' },
+    ]}
+  />
+
+  <div class="wrap pb-16">
+    <Shot src="/images/firebridge/home" widths={[800, 1440]} width={1440} height={900} alt="FIREBRIDGE home page: MODIS is going dark, the fire record doesn’t have to" sizes="(min-width: 1180px) 1100px, 100vw" eager />
+  </div>
+
+  <CaseSection label="01 · The problem" title="Same fires, different eyes.">
+    <div class="prose-case max-w-3xl text-[17px] leading-relaxed">
+      <p>NASA's <strong>MODIS</strong> instruments on Terra and Aqua have recorded Earth's fires since 2000. Since 2012, <strong>VIIRS</strong> has flown beside them. It sees the same fires through smaller pixels (375 m instead of 1 km) and at other times of day. Both MODIS satellites are now drifting toward the end of their missions.</p>
+      <p>Compare a region in 2010 with the same region in 2020, and more detections could mean more burning, a more sensitive sensor, different overpass times, or all three. Adding every satellite's points together hides that.</p>
+      <p>FIREBRIDGE brings the records into one workspace and keeps every sensor difference visible. Its <strong>sensor bridge</strong> estimates what Aqua-MODIS would have reported, so different years can be compared on one scale.</p>
+    </div>
+    <div class="mt-10 card p-6 sm:p-8">
+      <p class="m-0 mb-6 font-mono text-xs uppercase tracking-[.12em] text-muted">NASA FIRMS records in the archive, millions</p>
+      <ul class="grid gap-4">
+        {archive.map((a) => (
+          <li class="grid grid-cols-[110px_minmax(0,1fr)_64px] items-center gap-4 sm:grid-cols-[150px_minmax(0,1fr)_72px]">
+            <span>
+              <span class="block font-medium">{a.name}</span>
+              <span class="block font-mono text-[11px] text-muted">{a.instrument} · {a.since}</span>
+            </span>
+            <span class="h-3 overflow-hidden rounded-full bg-line">
+              <span class:list={['block h-full rounded-full', a.instrument.startsWith('VIIRS') ? 'bg-cyan' : 'bg-primary']} style={`width:${(a.rows / maxRows) * 100}%`}></span>
+            </span>
+            <span class="text-right font-mono text-sm">{a.rows.toFixed(1)}M</span>
+          </li>
+        ))}
+      </ul>
+      <p class="m-0 mt-6 text-sm text-muted">Archived and audited 9 Nov 2026. VIIRS's higher counts come from its finer pixels, which is exactly the bias the bridge accounts for.</p>
+    </div>
+  </CaseSection>
+
+  <CaseSection label="02 · Architecture" title="From a NASA API to a pinned release.">
+    <ol class="grid gap-3 md:grid-cols-5 md:gap-0">
+      {flow.map((f, i) => (
+        <li class="relative">
+          <div class:list={['card h-full p-5 md:rounded-none md:border-l-0', i === 0 && 'md:rounded-l-[22px] md:border-l', i === flow.length - 1 && 'md:rounded-r-[22px]']}>
+            <span class="flex items-center gap-2.5">
+              <span class="grid size-8 place-items-center rounded-lg bg-primary/12 text-primary"><Icon name={f.icon} class="size-4" /></span>
+              <span class="font-mono text-[11px] uppercase tracking-[.12em] text-muted">{String(i + 1).padStart(2, '0')}</span>
+            </span>
+            <p class="m-0 mt-4 text-lg font-semibold">{f.stage}</p>
+            <ul class="mt-2 grid gap-1">
+              {f.items.map((it) => <li class="text-sm leading-snug text-fg-2">{it}</li>)}
+            </ul>
+          </div>
+          {i < flow.length - 1 && (
+            <span class="absolute -bottom-3 left-1/2 z-10 grid size-6 -translate-x-1/2 rotate-90 place-items-center rounded-full border border-line-strong bg-bg text-primary md:-right-3 md:bottom-auto md:left-auto md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:rotate-0" aria-hidden="true">
+              <Icon name="arrow-right" class="size-3.5" />
+            </span>
+          )}
+        </li>
+      ))}
+    </ol>
+    <div class="prose-case mt-10 max-w-3xl text-[17px] leading-relaxed">
+      <p>Large archives and the application database are kept apart. The source is preserved with checksums and acquisition metadata, validated and normalized without losing native values, then <strong>published as an immutable version</strong>. When a user selects an area and dates, regional indexes narrow the archive reads, the exact saved geometry is applied, and only the requested history is published into a bounded PostGIS cache.</p>
+      <p>Airflow runs data workflows; the application's BullMQ workers run user analysis jobs. The two have separate responsibilities. The database, Airflow and pgAdmin stay private, and the web app connects with a restricted role that can't write raw detections.</p>
+    </div>
+  </CaseSection>
+
+  <CaseSection label="03 · What I built" title="Three services, one source of truth.">
+    <div class="grid gap-5">
+      <article class="card p-6 sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h3 class="flex items-center gap-3 text-2xl"><Icon name="database" class="size-6 text-primary" /> Data platform</h3>
+          <a href="https://github.com/Nasa-hackathon-FIREBRIDGE/FireBridge-DataPlatform" target="_blank" rel="noopener" class="link text-sm">Repository <Icon name="arrow-up-right" /></a>
+        </div>
+        <ul class="mt-5 grid gap-3 text-[15px] leading-relaxed text-fg-2">
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Resumable full-history acquisition of NASA FIRMS for Terra, Aqua, Suomi-NPP, NOAA-20, NOAA-21 and Landsat 8/9: <strong class="text-fg">666.9M rows, 23.3 GiB</strong>, streamed from ZIP members without extracting global CSVs.</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Offline audit of 4,202 download windows: checksums, schema and per-product field semantics. Invalid values and empty windows are recorded, never silently dropped.</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Ten Airflow 3.3 DAGs: ingestion, archive import, full-history download, audit, index, benchmark, load, analytics and health.</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>dbt staging and analytical models (daily detections, weather, reports, area context, query coverage) with data tests.</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Regional spatial indexes over 3,808 history windows and bounded, resumable PostGIS publication. Analysis time-to-ready fell from <strong class="text-fg">25.5 s to 4.7 s</strong>.</span></li>
+        </ul>
+        <ul class="mt-6 flex flex-wrap gap-2">{['Python 3.12', 'Airflow 3.3', 'dbt', 'Parquet', 'Arrow', 'DuckDB', 'PostgreSQL 16', 'PostGIS 3.5', 'Docker Compose'].map((s) => <li class="tag">{s}</li>)}</ul>
+      </article>
+
+      <article class="card p-6 sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h3 class="flex items-center gap-3 text-2xl"><Icon name="layers" class="size-6 text-primary" /> Web application</h3>
+          <a href="https://github.com/Nasa-hackathon-FIREBRIDGE/FireBridge-App" target="_blank" rel="noopener" class="link text-sm">Repository <Icon name="arrow-up-right" /></a>
+        </div>
+        <ul class="mt-5 grid gap-3 text-[15px] leading-relaxed text-fg-2">
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Draw or pick any area and period. The map, daily fire calendar, observations and satellite contributions all come from one saved, shareable analysis.</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span><strong class="text-fg">Sensor bridge</strong>: measured Terra/Aqua orbit drift, Aqua hidden and predicted from the other satellites, and a rehearsal of the day Aqua goes dark.</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Fire drivers against NASA POWER heat and rain, and findings checked against published fire science cited by DOI.</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Fastify 5 API and BullMQ workers on Redis, Prisma over a restricted PostgreSQL role, Zod-validated shared contracts.</span></li>
+        </ul>
+        <ul class="mt-6 flex flex-wrap gap-2">{['React 19', 'TypeScript', 'Vite', 'MapLibre GL', 'ECharts', 'd3', 'Fastify', 'BullMQ', 'Redis', 'Prisma', 'Zod'].map((s) => <li class="tag">{s}</li>)}</ul>
+      </article>
+
+      <article class="card p-6 sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h3 class="flex items-center gap-3 text-2xl"><Icon name="sparkles" class="size-6 text-primary" /> AI agent</h3>
+          <a href="https://github.com/Nasa-hackathon-FIREBRIDGE/FireBridge-AI" target="_blank" rel="noopener" class="link text-sm">Repository <Icon name="arrow-up-right" /></a>
+        </div>
+        <div class="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <ul class="grid gap-3 text-[15px] leading-relaxed text-fg-2">
+            <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span><strong class="text-fg">The model never invents a statistic.</strong> An evidence engine turns the analysis into numbered facts; the LLM only explains them and cites what it used.</span></li>
+            <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>A <strong class="text-fg">number guard</strong> checks every number in an answer against the evidence, allowing for rounding and French or Arabic number formats. On a mismatch, the same model gets one chance to repair.</span></li>
+            <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>A model router reads Groq rate-limit headers to switch <em>before</em> a 429, cools models down for exactly the time the API reports, and falls back to deterministic facts when every model is busy.</span></li>
+            <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Bounded tool loop (month, day, compare periods, unusual months…), short-term memory with a rolling summary, and BM25 long-term memory per user.</span></li>
+            <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Prompt-injection screen in 7 languages, before any model call. Runs as non-root on a read-only filesystem; 138 tests with no network.</span></li>
+          </ul>
+          <Shot src="/images/firebridge/copilot" widths={[480, 880]} width={880} height={830} alt="FIREBRIDGE copilot: 5 numbers checked against the evidence" sizes="300px" class="self-start" />
+        </div>
+        <ul class="mt-6 flex flex-wrap gap-2">{['Python', 'FastAPI', 'Pydantic', 'httpx', 'Groq', 'SQLite', 'BM25', 'pytest', 'uv'].map((s) => <li class="tag">{s}</li>)}</ul>
+      </article>
+    </div>
+  </CaseSection>
+
+  <CaseSection label="04 · Results" title="Measured, not promised.">
+    <dl class="grid gap-px overflow-hidden rounded-[22px] border border-line bg-line sm:grid-cols-2">
+      {results.map((r) => (
+        <div class="flex flex-col gap-1 bg-surface p-6 sm:p-8">
+          <dd class="order-1 m-0 text-[clamp(34px,4vw,48px)] font-semibold leading-none tracking-tight">{r.value}</dd>
+          <dt class="order-2 mt-2 text-fg-2">{r.label}</dt>
+          <dd class="order-3 m-0 font-mono text-xs text-muted">{r.note}</dd>
+        </div>
+      ))}
+    </dl>
+    <p class="mt-5 text-sm text-muted">Times are live measurements for those selections, not a guarantee for every query. A new Portugal/full-year-2020 analysis took 3.2 s.</p>
+
+    <div class="mt-12 grid gap-6 md:grid-cols-2">
+      <figure>
+        <Shot src="/images/firebridge/calendar" widths={[800, 1450]} width={1450} height={860} alt="Fire calendar: when was burning unusual, and do the satellites agree?" />
+        <figcaption>Fire calendar: a month is flagged only when independent satellites, each judged against its own past, agree.</figcaption>
+      </figure>
+      <figure>
+        <Shot src="/images/firebridge/map" widths={[700, 1200]} width={1200} height={1190} alt="Map workspace with fire detections over northern Morocco" />
+        <figcaption>Map workspace: detections clustered by zoom over a drawn study area, on NASA GIBS imagery.</figcaption>
+      </figure>
+    </div>
+  </CaseSection>
+
+  <CaseSection label="05 · Principles" title="What the product is allowed to say.">
+    <div class="grid gap-4 sm:grid-cols-2">
+      {principles.map((p) => (
+        <div class="card p-6">
+          <p class="m-0 text-lg font-semibold">{p.title}</p>
+          <p class="m-0 mt-2 text-[15px] leading-relaxed text-fg-2">{p.body}</p>
+        </div>
+      ))}
+    </div>
+  </CaseSection>
+
+  <CaseSection label="06 · Operations" title="Shipped like production software.">
+    <ul class="grid gap-3 sm:grid-cols-2">
+      {ops.map((o) => (
+        <li class="flex gap-3 rounded-2xl border border-line bg-surface p-5 text-[15px] leading-relaxed text-fg-2"><Icon name="shield" class="mt-0.5 size-5 shrink-0 text-cyan" /><span>{o}</span></li>
+      ))}
+    </ul>
+    <p class="mt-6 max-w-3xl text-[15px] text-fg-2">Everything runs as Docker Compose stacks on a 6 vCPU / 12 GB VPS, behind an Nginx proxy with automatically renewed TLS. This portfolio runs on the same server.</p>
+  </CaseSection>
+
+  <CaseSection label="07 · Team" title="Astra Mind.">
+    <p class="m-0 max-w-3xl text-[17px] leading-relaxed text-fg-2">Built for the NASA Space Apps Challenge on 14–15 November 2026 by <strong class="text-fg">Mohamed El Korchi</strong>, Mohamed-Ali Ahl Sidi Hoummad, Anwar Ezzirani and Zakaria El Korchi. All three repositories are MIT licensed.</p>
+    <figure class="mt-8">
+      <Shot src="/images/firebridge/cover" widths={[800, 1600]} width={1600} height={900} alt="FIREBRIDGE submission slide for NASA Space Apps Challenge 2026: NASA FIRMS detections over Fez-Meknes, Morocco" sizes="(min-width: 1180px) 800px, 100vw" />
+      <figcaption>Our submission slide. The map shows NASA FIRMS detections over Fez-Meknes, Morocco, 2020–2026.</figcaption>
+    </figure>
+    <a href="/work/docker-inspector/" class="card group mt-12 flex items-center justify-between gap-6 p-6 transition-colors hover:border-line-strong sm:p-8">
+      <span>
+        <span class="block font-mono text-xs uppercase tracking-[.12em] text-muted">Next case study</span>
+        <span class="mt-2 block text-2xl font-semibold sm:text-3xl">Docker Inspector</span>
+      </span>
+      <span class="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-primary-ink transition-transform group-hover:translate-x-1"><Icon name="arrow-right" /></span>
+    </a>
+  </CaseSection>
+</Base>
