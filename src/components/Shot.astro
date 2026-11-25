@@ -1,0 +1,37 @@
+---
+/**
+ * Responsive screenshot. Expects pre-optimised WebP files named `${src}-${width}.webp`
+ * in /public (see README → "Images").
+ */
+interface Props {
+  src: string;
+  widths: [number, number];
+  /** Intrinsic size of the largest file, used to reserve space (no layout shift). */
+  width: number;
+  height: number;
+  alt: string;
+  sizes?: string;
+  eager?: boolean;
+  class?: string;
+  frame?: boolean;
+}
+
+const { src, widths, width, height, alt, sizes = '(min-width: 1024px) 50vw, 100vw', eager = false, class: className, frame = true } = Astro.props;
+const [small, large] = widths;
+const full = `${src}-${large}.webp`;
+---
+
+<a href={full} class:list={['group block', frame && 'shot', className]} target="_blank" rel="noopener" aria-label={`${alt} (open full size)`}>
+  <img
+    src={full}
+    srcset={`${src}-${small}.webp ${small}w, ${full} ${large}w`}
+    sizes={sizes}
+    width={width}
+    height={height}
+    alt={alt}
+    loading={eager ? 'eager' : 'lazy'}
+    fetchpriority={eager ? 'high' : 'auto'}
+    decoding="async"
+    class="h-auto w-full transition-transform duration-500 ease-out group-hover:scale-[1.015]"
+  />
+</a>
