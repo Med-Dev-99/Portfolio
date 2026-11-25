@@ -1,0 +1,54 @@
+---
+/** Horizontal architecture strip: source → … → output, with flowing connectors. Scrolls sideways on small screens. */
+import type { Step } from '../data/profile';
+interface Props { steps: Step[]; label?: string; class?: string }
+const { steps, label = 'Architecture', class: className } = Astro.props;
+---
+
+<div class:list={['arch', className]}>
+  <p class="label m-0 mb-3">{label}</p>
+  <ol class="m-0 flex list-none items-stretch gap-y-2 overflow-x-auto p-0 pb-1 [scrollbar-width:thin] md:flex-wrap md:overflow-visible">
+    {steps.map((step, i) => (
+      <li class="flex shrink-0 items-center">
+        <span class="flex min-w-[112px] flex-col rounded-lg border border-line bg-surface-2 px-3 py-2">
+          <span class="text-[13.5px] font-medium leading-tight text-fg">{step.name}</span>
+          {step.detail && <span class="mt-0.5 font-mono text-[11px] leading-tight text-muted">{step.detail}</span>}
+        </span>
+        {i < steps.length - 1 && (
+          <span class="flow relative mx-1.5 h-px w-7 shrink-0 bg-line-strong sm:w-9" aria-hidden="true">
+            <span class="absolute -right-px -top-[3px] size-0 border-y-[3.5px] border-l-[5px] border-y-transparent border-l-line-strong"></span>
+          </span>
+        )}
+      </li>
+    ))}
+  </ol>
+</div>
+
+<style>
+  /* A packet travels along each connector, staggered left to right. */
+  .flow::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 0;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--primary);
+    box-shadow: 0 0 8px var(--primary);
+    animation: packet 2.4s linear infinite;
+    opacity: 0;
+  }
+  li:nth-child(2) .flow::after { animation-delay: .4s; }
+  li:nth-child(3) .flow::after { animation-delay: .8s; }
+  li:nth-child(4) .flow::after { animation-delay: 1.2s; }
+  li:nth-child(5) .flow::after { animation-delay: 1.6s; }
+  li:nth-child(6) .flow::after { animation-delay: 2s; }
+  @keyframes packet {
+    0% { left: 0; opacity: 0; }
+    10% { opacity: 1; }
+    40% { left: calc(100% - 5px); opacity: 1; }
+    50%, 100% { left: calc(100% - 5px); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .flow::after { display: none; } }
+</style>
