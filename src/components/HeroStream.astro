@@ -1,0 +1,403 @@
+---
+/**
+ * Hero: "assembled from data".
+ * Raw records stream in from the left (from the top on phones), pass a validate/transform gate,
+ * bad records (null, NaN…) drop into quarantine, and valid ones fly into a grid that assembles
+ * the name as a data heatmap. Then a slow scan sweeps it and the pointer acts as a lens.
+ * The <h1> stays real text (visually hidden once the canvas runs); without JS it is shown as-is.
+ */
+import { site, hero } from '../data/profile';
+import Icon from './Icon.astro';
+---
+
+<section class="relative overflow-x-clip" data-hero>
+  <div class="wrap flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pt-8 sm:pt-10">
+    <p class="m-0 inline-flex flex-wrap items-center gap-2.5 rounded-full border border-line bg-surface py-1 pl-1.5 pr-3.5 text-[13px] text-fg-2 shadow-[0_1px_2px_rgb(10_16_29/.04)]">
+      <span class="flex items-center gap-1.5 rounded-full bg-green/12 px-2 py-0.5 font-mono text-[11px] text-green"><span class="size-1.5 rounded-full bg-green"></span>now</span>
+      {hero.status} <span class="hidden text-muted sm:inline">· {site.location}</span>
+    </p>
+    <p class="readout m-0 hidden items-center gap-x-4 font-mono text-[12px] text-muted md:flex" aria-hidden="true">
+      <span class="flex items-center gap-2"><span class="live-dot relative flex size-2"><span class="absolute inline-flex size-full rounded-full bg-green opacity-60"></span><span class="relative inline-flex size-2 rounded-full bg-green"></span></span>stream</span>
+      <span><b class="tnum font-medium text-fg" data-hero-rows>0</b> rows</span>
+      <span><b class="tnum font-medium text-green" data-hero-valid>100%</b> valid</span>
+      <span><b class="tnum font-medium text-red" data-hero-bad>0</b> quarantined</span>
+    </p>
+  </div>
+
+  <div class="stage relative mt-3 h-[260px] min-[900px]:h-[clamp(360px,28vw,480px)]" data-hero-stage>
+    <canvas class="absolute inset-0 block size-full" data-hero-canvas aria-hidden="true"></canvas>
+    <div class="wrap relative flex h-full items-center" data-hero-box>
+      <h1 class="hero-name m-0 text-[clamp(52px,9vw,128px)] font-extrabold uppercase leading-[.9] tracking-[-.04em]" data-hero-name>
+        Mohamed<br />El Korchi<span class="sr-only">, {site.role}</span>
+      </h1>
+    </div>
+  </div>
+
+  <div class="wrap grid items-end gap-8 pb-14 pt-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16 lg:pb-20">
+    <div>
+      <p class="sql m-0"><span class="select-none text-muted">&gt; </span>{hero.kicker}</p>
+      <p class="m-0 mt-3 max-w-[860px] text-[clamp(22px,2.7vw,34px)] font-semibold leading-[1.18] tracking-[-.03em] text-fg">
+        {hero.statement[0]}<span class="bg-gradient-to-r from-primary to-violet bg-clip-text text-transparent">{hero.statement[1]}</span>{hero.statement[2]}
+      </p>
+      <p class="m-0 mt-4 max-w-[720px] text-[16.5px] leading-relaxed text-fg-2">{hero.sub}</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="#work" class="btn btn-primary">View projects <Icon name="arrow-right" /></a>
+      <a href={site.resume} class="btn" download><Icon name="download" /> Resume</a>
+      <a href={site.github} target="_blank" rel="me noopener" class="grid size-11 place-items-center rounded-[10px] border border-line bg-surface text-fg-2 transition-colors hover:text-fg" aria-label="GitHub profile"><Icon name="github" class="size-5" /></a>
+      <a href={site.linkedin} target="_blank" rel="me noopener" class="grid size-11 place-items-center rounded-[10px] border border-line bg-surface text-fg-2 transition-colors hover:text-fg" aria-label="LinkedIn profile"><Icon name="linkedin" class="size-5" /></a>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  [data-hero] .readout { opacity: 0; transition: opacity .6s; }
+  [data-hero].is-live .readout { opacity: 1; }
+  [data-hero].is-static .readout { display: none; }
+  [data-hero] .live-dot > span:first-child { animation: hero-ping 1.8s cubic-bezier(0, 0, .2, 1) infinite; }
+  @keyframes hero-ping { 75%, 100% { transform: scale(2.2); opacity: 0; } }
+  /* Once the canvas draws the name, keep the h1 for SEO and screen readers only. */
+  [data-hero].is-live .hero-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  [data-hero] canvas { touch-action: pan-y; }
+  /* With JS, hide the plain heading until the canvas takes over (no flash); show it anyway if that never happens. */
+  .js [data-hero]:not(.is-live) .hero-name { opacity: 0; animation: hero-fallback .3s 2.5s forwards; }
+  @keyframes hero-fallback { to { opacity: 1; } }
+</style>
+
+<script>
+  type Cell = { x: number; y: number; filled: boolean; flash: number; color: string };
+  type Rec = {
+    x: number; y: number; v: number; ph: number; amp: number; frag: string | null; bad: boolean;
+    state: 0 | 1 | 2 | 3; // 0 raw, 1 flying to a cell, 2 dropping to quarantine, 3 done
+    t: number; dur: number; sx: number; sy: number; tx: number; ty: number; cell: number; w: number;
+  };
+
+  const FRAGS = ['{"vessel":"MSC"}', 'lat=30.42', 'ts=1732541', '"eta":"14:05"', 'id:7f3a', 'temp=21.4', 'frp=12.8', '"mmsi":242', '{…}', 'lon=-9.6'];
+  const BAD_FRAGS = ['null', 'NaN', '???', '""'];
+  const LINES = ['MOHAMED', 'EL KORCHI'];
+  const fmt = new Intl.NumberFormat('en-US');
+
+  const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const hexToRgb = (hex: string): [number, number, number] => {
+    const h = hex.replace('#', '');
+    const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  };
+  const mix = (a: [number, number, number], b: [number, number, number], t: number) =>
+    `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)})`;
+  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  class HeroStream {
+    private ctx: CanvasRenderingContext2D;
+    private W = 0; private H = 0; private dpr = 1;
+    private horizontal = true;
+    private gate = 0; // x (horizontal) or y (vertical) of the validation gate
+    private cl = 0; private cr = 0; // content left/right (inside .wrap padding)
+    private grid = { x: 0, y: 0, w: 0, h: 0 };
+    private pitch = 6;
+    private cells: Cell[] = [];
+    private empty: number[] = [];
+    private recs: Rec[] = [];
+    private acc = 0;
+    private assembled = false;
+    private scan = -1;
+    private pointer = { x: -1e4, y: -1e4 };
+    private counts = { rows: 0, bad: 0 };
+    private c = { primary: '', violet: '', cyan: '', red: '', muted: '', ghost: '', text2: '' };
+    private raf = 0; private last = 0; private inView = false;
+    private reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    private out: Record<string, HTMLElement | null>;
+
+    constructor(private root: HTMLElement, private canvas: HTMLCanvasElement, private box: HTMLElement) {
+      this.ctx = canvas.getContext('2d')!;
+      this.out = {
+        rows: root.querySelector('[data-hero-rows]'),
+        valid: root.querySelector('[data-hero-valid]'),
+        bad: root.querySelector('[data-hero-bad]'),
+      };
+    }
+
+    readColors() {
+      this.c = {
+        primary: css('--primary'), violet: css('--violet'), cyan: css('--cyan'), red: css('--red'),
+        muted: css('--muted'), ghost: css('--line-strong'), text2: css('--text-2'),
+      };
+      const a = hexToRgb(this.c.primary), b = hexToRgb(this.c.violet);
+      for (const cell of this.cells) cell.color = mix(a, b, (cell.x - this.grid.x) / Math.max(1, this.grid.w));
+    }
+
+    layout() {
+      const r = this.canvas.getBoundingClientRect();
+      this.dpr = Math.min(2, devicePixelRatio || 1);
+      this.W = r.width; this.H = r.height;
+      this.canvas.width = Math.round(this.W * this.dpr);
+      this.canvas.height = Math.round(this.H * this.dpr);
+      const b = this.box.getBoundingClientRect(), s = getComputedStyle(this.box);
+      this.cl = b.left - r.left + parseFloat(s.paddingLeft);
+      this.cr = b.right - r.left - parseFloat(s.paddingRight);
+      this.horizontal = this.W >= 900;
+
+      // Area available for the name.
+      let ax: number, ay: number, aw: number, ah: number;
+      if (this.horizontal) {
+        this.gate = this.cl + (this.cr - this.cl) * 0.2;
+        ax = this.gate + 72; aw = this.cr - ax; ay = 36; ah = this.H - 72;
+      } else {
+        this.gate = 92;
+        ax = this.cl; aw = this.cr - this.cl; ay = this.gate + 30; ah = this.H - ay - 12;
+      }
+
+      // Fit the two lines, render them off-screen, and sample a grid of cells.
+      const probe = document.createElement('canvas').getContext('2d')!;
+      const family = '"Geist Variable", ui-sans-serif, system-ui, sans-serif';
+      probe.font = `800 100px ${family}`;
+      const m = LINES.map((l) => probe.measureText(l));
+      const widest = Math.max(...m.map((x) => x.width)) * 1.04;
+      const cap = Math.max(...m.map((x) => x.actualBoundingBoxAscent));
+      const size = Math.min((aw / widest) * 100, (ah / ((2 * cap + 24) / 100)) * 1, 220);
+      const capPx = (cap / 100) * size, gap = size * 0.24;
+      const textH = 2 * capPx + gap;
+      const textW = (widest / 100) * size;
+      this.pitch = Math.max(4, Math.min(8, Math.round(size / 21)));
+      const gx = ax, gy = this.horizontal ? ay + (ah - textH) / 2 : ay;
+      this.grid = { x: gx, y: gy, w: textW, h: textH };
+
+      const off = document.createElement('canvas');
+      off.width = Math.ceil(textW) + 4; off.height = Math.ceil(textH) + 4;
+      const o = off.getContext('2d', { willReadFrequently: true })!;
+      o.font = `800 ${size}px ${family}`;
+      if ('letterSpacing' in o) (o as any).letterSpacing = `${size * 0.03}px`;
+      o.fillStyle = '#000';
+      o.textBaseline = 'alphabetic';
+      o.fillText(LINES[0], 0, capPx);
+      o.fillText(LINES[1], 0, 2 * capPx + gap);
+      const data = o.getImageData(0, 0, off.width, off.height).data;
+
+      const p = this.pitch;
+      const prevFilled = this.assembled;
+      this.cells = [];
+      for (let y = 0; y + p <= off.height; y += p) {
+        for (let x = 0; x + p <= off.width; x += p) {
+          const i = ((y + (p >> 1)) * off.width + (x + (p >> 1))) * 4 + 3;
+          if (data[i] > 110) this.cells.push({ x: gx + x, y: gy + y, filled: prevFilled || this.reduced, flash: 0, color: '' });
+        }
+      }
+      this.empty = this.cells.map((_, i) => i).filter((i) => !this.cells[i].filled);
+      for (let i = this.empty.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [this.empty[i], this.empty[j]] = [this.empty[j], this.empty[i]]; }
+      this.recs = [];
+      this.readColors();
+    }
+
+    private spawn(seed = false) {
+      const frag = Math.random() < (this.empty.length ? 0.025 : 0.09);
+      const bad = frag ? Math.random() < 0.22 : Math.random() < 0.012;
+      const text = frag ? (bad ? BAD_FRAGS : FRAGS)[(Math.random() * (bad ? BAD_FRAGS.length : FRAGS.length)) | 0] : null;
+      let x: number, y: number;
+      if (this.horizontal) {
+        x = seed ? Math.random() * this.gate : -30 - Math.random() * 60;
+        y = this.grid.y - 20 + Math.random() * (this.grid.h + 60);
+      } else {
+        x = this.cl + Math.random() * (this.cr - this.cl);
+        y = seed ? Math.random() * this.gate : -14 - Math.random() * 30;
+      }
+      this.recs.push({
+        // Speed scales with the stream's length so the name assembles in similar time on any screen width.
+        x, y, v: this.horizontal ? (150 + Math.random() * 170) * Math.max(1, this.gate / 450) : 70 + Math.random() * 80,
+        ph: Math.random() * 6.28, amp: 4 + Math.random() * 10, frag: text, bad,
+        state: 0, t: 0, dur: 0, sx: 0, sy: 0, tx: 0, ty: 0, cell: -1, w: -1,
+      });
+    }
+
+    private cross(r: Rec) {
+      if (r.bad) { r.state = 2; return; }
+      const idx = this.empty.length ? this.empty.pop()! : (Math.random() * this.cells.length) | 0;
+      const cell = this.cells[idx];
+      r.state = 1; r.t = 0; r.cell = idx; r.sx = r.x; r.sy = r.y;
+      r.tx = cell.x; r.ty = cell.y;
+      r.dur = 0.45 + Math.hypot(r.tx - r.sx, r.ty - r.sy) / 1500 + Math.random() * 0.2;
+    }
+
+    step(dt: number) {
+      // Fast while assembling, then a calm trickle of updates.
+      const rate = this.empty.length ? Math.max(260, this.cells.length / 3.2) : this.horizontal ? 26 : 14;
+      this.acc += dt * rate;
+      const cap = 1400 * Math.max(1, (this.horizontal ? this.gate : 120) / 450);
+      while (this.acc >= 1) { this.acc--; if (this.recs.length < cap) this.spawn(); }
+
+      const t = performance.now() / 1000;
+      for (const r of this.recs) {
+        if (r.state === 0) {
+          if (this.horizontal) {
+            r.x += r.v * dt; r.y += Math.sin(t * 2 + r.ph) * r.amp * dt;
+            if (r.x >= this.gate) this.cross(r);
+          } else {
+            r.y += r.v * dt; r.x += Math.sin(t * 2 + r.ph) * r.amp * dt;
+            if (r.y >= this.gate) this.cross(r);
+          }
+        } else if (r.state === 1) {
+          r.t += dt / r.dur;
+          if (r.t >= 1) {
+            const cell = this.cells[r.cell];
+            if (cell) { cell.filled = true; cell.flash = 1; }
+            this.counts.rows++;
+            r.state = 3;
+          } else {
+            const k = ease(r.t);
+            const cx = this.horizontal ? r.sx + (r.tx - r.sx) * 0.5 : r.sx;
+            const cy = this.horizontal ? r.sy : r.sy + (r.ty - r.sy) * 0.5;
+            const u = 1 - k;
+            r.x = u * u * r.sx + 2 * u * k * cx + k * k * r.tx;
+            r.y = u * u * r.sy + 2 * u * k * cy + k * k * r.ty;
+          }
+        } else if (r.state === 2) {
+          if (this.horizontal) { r.x = this.gate + Math.sin(r.ph) * 3; r.y += 260 * dt; if (r.y > this.grid.y + this.grid.h + 52) { this.counts.bad++; r.state = 3; } }
+          else { r.y = this.gate + Math.sin(r.ph) * 2; r.x += 220 * dt; if (r.x > this.cr) { this.counts.bad++; r.state = 3; } }
+        }
+      }
+      this.recs = this.recs.filter((r) => r.state !== 3);
+      for (const cell of this.cells) if (cell.flash > 0) cell.flash = Math.max(0, cell.flash - dt * 1.8);
+
+      if (!this.empty.length && !this.assembled && this.recs.every((r) => r.state !== 1)) { this.assembled = true; this.scan = 0; }
+      if (this.assembled) this.scan = (this.scan + dt / 7) % 1;
+    }
+
+    draw() {
+      const { ctx, c } = this;
+      ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      ctx.clearRect(0, 0, this.W, this.H);
+      const p = this.pitch;
+      const top = this.horizontal ? this.grid.y - 30 : this.gate;
+
+      // Gate.
+      ctx.save();
+      if (this.horizontal) {
+        const y0 = this.grid.y - 30, y1 = this.grid.y + this.grid.h + 30;
+        ctx.globalAlpha = 0.12; ctx.fillStyle = c.primary; ctx.fillRect(this.gate - 6, y0, 12, y1 - y0);
+        ctx.globalAlpha = 0.85; ctx.strokeStyle = c.primary; ctx.lineWidth = 1.5; ctx.setLineDash([4, 5]);
+        ctx.beginPath(); ctx.moveTo(this.gate, y0); ctx.lineTo(this.gate, y1); ctx.stroke();
+      } else {
+        ctx.globalAlpha = 0.12; ctx.fillStyle = c.primary; ctx.fillRect(this.cl, this.gate - 5, this.cr - this.cl, 10);
+        ctx.globalAlpha = 0.85; ctx.strokeStyle = c.primary; ctx.lineWidth = 1.5; ctx.setLineDash([4, 5]);
+        ctx.beginPath(); ctx.moveTo(this.cl, this.gate); ctx.lineTo(this.cr, this.gate); ctx.stroke();
+      }
+      ctx.restore();
+
+      // Labels.
+      ctx.font = '500 11px "Geist Mono Variable", ui-monospace, monospace';
+      ctx.fillStyle = c.muted;
+      if (this.horizontal) {
+        ctx.textAlign = 'left'; ctx.fillText('RAW RECORDS', this.cl, top - 12);
+        ctx.textAlign = 'center'; ctx.fillStyle = c.primary; ctx.fillText('VALIDATE · TRANSFORM', this.gate, top - 12);
+        ctx.fillStyle = c.red; ctx.textAlign = 'center'; ctx.fillText(`QUARANTINE ${fmt.format(this.counts.bad)}`, this.gate, this.grid.y + this.grid.h + 70);
+      } else {
+        ctx.textAlign = 'left'; ctx.fillText('RAW RECORDS ↓', this.cl, 14);
+        ctx.textAlign = 'right'; ctx.fillStyle = c.primary; ctx.fillText('VALIDATE · TRANSFORM', this.cr, this.gate - 10);
+        ctx.fillStyle = c.red; ctx.fillText(`QUARANTINE ${fmt.format(this.counts.bad)}`, this.cr, this.gate + 18);
+      }
+
+      // Cells: dotted "schema" until data lands, then filled; scan band and pointer lens on top.
+      const scanX = this.grid.x - 40 + this.scan * (this.grid.w + 80);
+      const R = 70;
+      for (const cell of this.cells) {
+        const cx = cell.x + p / 2, cy = cell.y + p / 2;
+        const d = Math.hypot(cx - this.pointer.x, cy - this.pointer.y);
+        const lens = d < R ? 1 + 0.9 * (1 - d / R) ** 2 : 1;
+        if (!cell.filled) {
+          const s = p * 0.38 * lens;
+          ctx.globalAlpha = 0.45; ctx.fillStyle = c.muted;
+          ctx.fillRect(cx - s / 2, cy - s / 2, s, s);
+          continue;
+        }
+        const band = this.assembled ? Math.max(0, 1 - Math.abs(cx - scanX) / 26) : 0;
+        const s = (p - 1.3) * lens;
+        ctx.globalAlpha = 0.92;
+        ctx.fillStyle = cell.color;
+        ctx.fillRect(cx - s / 2, cy - s / 2, s, s);
+        const glow = Math.max(cell.flash, band * 0.55, d < R ? 0.35 * (1 - d / R) : 0);
+        if (glow > 0.02) { ctx.globalAlpha = glow; ctx.fillStyle = c.cyan; ctx.fillRect(cx - s / 2, cy - s / 2, s, s); }
+      }
+
+      // Records.
+      ctx.font = '11px "Geist Mono Variable", ui-monospace, monospace';
+      ctx.textAlign = 'left';
+      for (const r of this.recs) {
+        if (r.state === 0) {
+          const fade = this.horizontal ? Math.min(1, (r.x + 30) / 120) : Math.min(1, (r.y + 14) / 40);
+          if (r.frag) {
+            ctx.globalAlpha = 0.7 * fade; ctx.fillStyle = r.bad ? c.red : c.text2;
+            if (r.w < 0) r.w = ctx.measureText(r.frag).width;
+            ctx.fillText(r.frag, r.x - (this.horizontal ? r.w : 0), r.y);
+          } else {
+            ctx.globalAlpha = 0.55 * fade; ctx.fillStyle = r.bad ? c.red : c.muted;
+            ctx.fillRect(r.x - 1.2, r.y - 1.2, 2.4, 2.4);
+          }
+        } else if (r.state === 1) {
+          const s = p - 1.3;
+          ctx.globalAlpha = 0.95; ctx.fillStyle = c.primary;
+          ctx.fillRect(r.x - s / 2 + p / 2, r.y - s / 2 + p / 2, s, s);
+        } else if (r.state === 2) {
+          ctx.globalAlpha = 0.9; ctx.fillStyle = c.red;
+          ctx.fillRect(r.x - 2, r.y - 2, 4, 4);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    private render() {
+      const { rows, bad } = this.counts;
+      if (this.out.rows) this.out.rows.textContent = fmt.format(rows);
+      if (this.out.bad) this.out.bad.textContent = fmt.format(bad);
+      if (this.out.valid) this.out.valid.textContent = `${(rows + bad ? (rows / (rows + bad)) * 100 : 100).toFixed(1)}%`;
+    }
+
+    private frame = (now: number) => {
+      const dt = Math.min(0.05, (now - this.last) / 1000);
+      this.last = now;
+      this.step(dt);
+      this.draw();
+      if (((now / 250) | 0) !== (((now - dt * 1000) / 250) | 0)) this.render();
+      this.raf = requestAnimationFrame(this.frame);
+    };
+
+    start() {
+      if (this.reduced || this.raf || !this.inView || document.hidden) return;
+      this.last = performance.now();
+      this.raf = requestAnimationFrame(this.frame);
+    }
+    stop() { cancelAnimationFrame(this.raf); this.raf = 0; }
+
+    async init() {
+      try { await document.fonts.load('800 100px "Geist Variable"'); } catch {}
+      this.layout();
+      if (!this.cells.length) return; // nothing to draw: keep the HTML heading
+      this.root.classList.add('is-live');
+      if (this.reduced) {
+        this.root.classList.add('is-static');
+        for (let i = 0; i < 160; i++) this.spawn(true);
+        this.recs.forEach((r) => (r.bad = false));
+        this.draw();
+        return;
+      }
+      for (let i = 0; i < Math.min(500, this.cells.length / 3); i++) this.spawn(true);
+
+      new IntersectionObserver(([e]) => { this.inView = e.isIntersecting; this.inView ? this.start() : this.stop(); }).observe(this.canvas);
+      document.addEventListener('visibilitychange', () => (document.hidden ? this.stop() : this.start()));
+      let pending = 0;
+      new ResizeObserver(() => {
+        clearTimeout(pending);
+        pending = window.setTimeout(() => { this.layout(); if (this.reduced) this.draw(); }, 120);
+      }).observe(this.canvas);
+      new MutationObserver(() => { this.readColors(); if (!this.raf) this.draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      const stage = this.canvas.parentElement!;
+      stage.addEventListener('pointermove', (e) => { const r = this.canvas.getBoundingClientRect(); this.pointer = { x: e.clientX - r.left, y: e.clientY - r.top }; });
+      stage.addEventListener('pointerleave', () => { this.pointer = { x: -1e4, y: -1e4 }; });
+    }
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-hero]');
+  if (root) {
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-hero-canvas]')!;
+    const box = root.querySelector<HTMLElement>('[data-hero-box]')!;
+    new HeroStream(root, canvas, box).init();
+  }
+</script>
