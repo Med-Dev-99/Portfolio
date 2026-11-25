@@ -1,0 +1,150 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import Shot from '../../components/Shot.astro';
+import CaseHeader from '../../components/CaseHeader.astro';
+import CaseSection from '../../components/CaseSection.astro';
+
+const compare = [
+  { q: 'Why did a container die?', desktop: 'Exit code and logs; you work out the cause', inspector: 'Diagnosis, evidence, fix, and the metrics from just before it died' },
+  { q: 'Resource usage over time', desktop: 'Live view (history needs an extension)', inspector: '7 days built in, with a clickable timeline and crash markers' },
+  { q: 'Configuration audit', desktop: 'Image vulnerability scanning (Docker Scout)', inspector: 'Exposed ports, UFW bypass, limits, log growth, outdated images, secrets' },
+  { q: 'Native Linux engine', desktop: 'Runs its own VM and engine', inspector: 'Any socket: native, rootless, Desktop or TCP' },
+  { q: 'Cost and account', desktop: 'Paid for larger companies; some features need sign-in', inspector: 'MIT, no account, no telemetry' },
+];
+
+const features = [
+  { icon: 'stethoscope', title: 'Crash reports', body: 'When a container stops unexpectedly, a report is saved straight away. It names the cause in plain English (out of memory, missing module, database login failed, dependency down, port in use…), highlights the log line it is based on, and includes the seconds of CPU and memory before the crash. Each report comes with a fix to copy, and memory limits have an Apply button. Crash loops are merged into one report with a counter.' },
+  { icon: 'history', title: 'Time machine', body: 'CPU and memory for the host and every container, stored locally: about 10-second resolution for 2 days, then one minute for 7 days. Click any moment to see what was running and what happened in the five minutes around it.' },
+  { icon: 'shield', title: 'Doctor', body: 'Audits how containers are configured and grades each one: database ports published to the whole network, ports that bypass UFW, a mounted Docker socket, privileged mode, secrets in environment variables, missing memory limits or restart policies, unrotated logs, outdated images. Fixes are a Compose snippet to copy or a button that applies the change.' },
+  { icon: 'terminal', title: 'Everything about a container', body: 'Eight tabs per container: live stats with sparklines, logs with ANSI colours and error highlighting, a real interactive shell (xterm.js), a file browser with tar downloads, processes, configuration with masked secrets, and a searchable inspect tree.' },
+] as const;
+
+const gallery = [
+  { src: 'container-stats-dark', alt: 'Container stats: live CPU, memory, network and block I/O charts' },
+  { src: 'container-logs-dark', alt: 'Container logs with error highlighting and filters' },
+  { src: 'container-terminal-light', alt: 'Interactive terminal inside a container, light theme' },
+  { src: 'disk-usage-dark', alt: 'Disk usage breakdown of images, containers, volumes and build cache' },
+  { src: 'image-layers-dark', alt: 'Image layer-by-layer build history' },
+  { src: 'quick-open-dark', alt: 'Quick open palette (Ctrl+K)' },
+];
+
+const architecture = [
+  { file: 'electron/main.js', role: 'Frameless window; starts the backend in-process' },
+  { file: 'server/docker.js', role: 'Docker Engine API client over the Unix socket or TCP, no SDK' },
+  { file: 'server/hub.js', role: 'Multiplexed stats streams, event stream, host metrics, crash detection' },
+  { file: 'server/store.js', role: 'Local SQLite history via node:sqlite: metrics, events, crash reports' },
+  { file: 'server/crash.js', role: 'Crash analyser: exit codes, log patterns and metrics → verdict, evidence, fixes' },
+  { file: 'server/doctor.js', role: 'Configuration auditor and scoring' },
+  { file: 'server/server.js', role: '127.0.0.1 HTTP + WebSocket: engine proxy, logs, exec, files' },
+  { file: 'src/', role: 'React 19 UI (Vite, TanStack Query, hand-rolled SVG charts)' },
+];
+---
+
+<Base title="Docker Inspector: case study · Mohamed El Korchi" description="A Linux desktop app that records your Docker containers, explains crashes in plain English, rewinds 7 days of metrics and audits configuration. Electron, React, Node.js, SQLite." image="/og-docker-inspector.png">
+  <CaseHeader
+    query="SELECT * FROM case_studies WHERE project = 'docker-inspector';"
+    title="Docker Inspector"
+    subtitle="Docker Desktop shows you what is running. Docker Inspector tells you what is wrong, and what happened while you weren't looking."
+    facts={[
+      { label: 'Role', value: 'Sole author: design, backend, UI, packaging' },
+      { label: 'Platform', value: 'Linux desktop (Electron) or a hardened container' },
+      { label: 'Stack', value: 'Electron · React 19 · TypeScript · Node.js' },
+      { label: 'Licence', value: 'MIT · no account · no telemetry' },
+    ]}
+    links={[{ label: 'View on GitHub', href: 'https://github.com/Med-Dev-99/Docker-inspector', icon: 'github' }]}
+  />
+
+  <div class="wrap pb-16">
+    <Shot src="/images/docker-inspector/overview-dark" widths={[800, 1440]} width={1440} height={900} alt="Docker Inspector overview dashboard in dark mode" sizes="(min-width: 1180px) 1100px, 100vw" eager />
+  </div>
+
+  <CaseSection label="01 · Why" title="A black box for your containers.">
+    <div class="prose-case max-w-3xl text-[17px] leading-relaxed">
+      <p>When a container dies at 3 a.m., the exit code and a log tail rarely tell the whole story. Docker Inspector <strong>records in the background</strong>: CPU, memory and engine events go into a local SQLite store, so the moments before a crash are still there when you look.</p>
+    </div>
+    <div class="mt-8 overflow-x-auto rounded-[22px] border border-line">
+      <table class="w-full min-w-[640px] border-collapse text-left text-[15px]">
+        <thead class="bg-surface-2 font-mono text-[11px] uppercase tracking-[.12em] text-muted">
+          <tr><th class="px-5 py-3.5 font-normal"></th><th class="px-5 py-3.5 font-normal">Docker Desktop</th><th class="px-5 py-3.5 font-normal text-primary">Docker Inspector</th></tr>
+        </thead>
+        <tbody>
+          {compare.map((row) => (
+            <tr class="border-t border-line bg-surface">
+              <th scope="row" class="px-5 py-4 font-medium text-fg">{row.q}</th>
+              <td class="px-5 py-4 text-muted">{row.desktop}</td>
+              <td class="px-5 py-4 text-fg-2">{row.inspector}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-4 text-sm text-muted">Docker Desktop remains the better choice for Kubernetes, Docker Scout, the extensions marketplace and macOS/Windows.</p>
+  </CaseSection>
+
+  <CaseSection label="02 · Features" title="Diagnose, rewind, audit.">
+    <div class="grid gap-4 md:grid-cols-2">
+      {features.map((f) => (
+        <article class="card p-6 sm:p-7">
+          <span class="grid size-10 place-items-center rounded-xl bg-cyan/12 text-cyan"><Icon name={f.icon} class="size-5" /></span>
+          <h3 class="mt-4 text-xl">{f.title}</h3>
+          <p class="m-0 mt-2 text-[15px] leading-relaxed text-fg-2">{f.body}</p>
+        </article>
+      ))}
+    </div>
+    <div class="mt-10 grid gap-5 sm:grid-cols-2">
+      {gallery.map((g) => (
+        <figure>
+          <Shot src={`/images/docker-inspector/${g.src}`} widths={[800, 1440]} width={1440} height={900} alt={g.alt} />
+          <figcaption>{g.alt}</figcaption>
+        </figure>
+      ))}
+    </div>
+    <p class="mt-6 text-sm text-muted">Screenshots are taken from a throw-away Docker-in-Docker engine running a fake demo project, so they contain no real data.</p>
+  </CaseSection>
+
+  <CaseSection label="03 · Architecture" title="No SDK, one local backend.">
+    <div class="prose-case max-w-3xl text-[17px] leading-relaxed">
+      <p>The UI never talks to Docker directly. A small local backend proxies the Engine API over the Unix socket and adds what the API doesn't provide: <strong>multiplexed live stats, log streaming, an interactive exec session over a hijacked connection, and a file browser built on exec</strong>. The only production dependency is <code class="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[14px]">ws</code>.</p>
+    </div>
+    <ul class="mt-8 grid overflow-hidden rounded-[22px] border border-line">
+      {architecture.map((a) => (
+        <li class="grid gap-1 border-t border-line bg-surface px-5 py-3.5 first:border-t-0 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-6">
+          <code class="font-mono text-[13px] text-primary">{a.file}</code>
+          <span class="text-[15px] text-fg-2">{a.role}</span>
+        </li>
+      ))}
+    </ul>
+  </CaseSection>
+
+  <CaseSection label="04 · Security" title="Root-equivalent access, handled carefully.">
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="card p-6 sm:p-7">
+        <h3 class="flex items-center gap-2.5 text-lg"><Icon name="shield" class="size-5 text-green" /> Desktop backend</h3>
+        <ul class="mt-4 grid gap-2.5 text-[15px] text-fg-2">
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Listens on 127.0.0.1 only</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Random per-launch token on every API and WebSocket call</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Host and Origin validation blocks cross-site requests and DNS rebinding</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>No network requests of its own; history never leaves the machine</span></li>
+        </ul>
+      </div>
+      <div class="card p-6 sm:p-7">
+        <h3 class="flex items-center gap-2.5 text-lg"><Icon name="shield" class="size-5 text-green" /> Container image</h3>
+        <ul class="mt-4 grid gap-2.5 text-[15px] text-fg-2">
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Multi-stage build on node:22-alpine, about 240 MB, no Electron binary</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Unprivileged user, read-only filesystem, all capabilities dropped, no-new-privileges</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Port published on loopback only, built-in health check</span></li>
+          <li class="flex gap-3"><Icon name="check" class="mt-1 size-4 shrink-0 text-green" /><span>Explains the wrong DOCKER_GID in its own logs</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <a href="/work/firebridge/" class="card group mt-12 flex items-center justify-between gap-6 p-6 transition-colors hover:border-line-strong sm:p-8">
+      <span>
+        <span class="block font-mono text-xs uppercase tracking-[.12em] text-muted">Next case study</span>
+        <span class="mt-2 block text-2xl font-semibold sm:text-3xl">FIREBRIDGE · NASA Space Apps 2026</span>
+      </span>
+      <span class="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-primary-ink transition-transform group-hover:translate-x-1"><Icon name="arrow-right" /></span>
+    </a>
+  </CaseSection>
+</Base>
