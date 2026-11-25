@@ -21,19 +21,122 @@ export const hero = {
   status: 'AI & Data Engineer at Freshtrack',
   kicker: 'raw data in → reliable answers out',
   statement: ['I build the pipelines and platforms that turn raw, messy data into ', 'reliable answers', '.'],
-  sub: 'Real-time ingestion, lakehouse ELT and AI on top of trusted data, with Apache NiFi, Spark/Databricks, Airflow, dbt and PostgreSQL. Currently at Freshtrack; recently FIREBRIDGE for NASA Space Apps 2026.',
+  sub: 'Real-time ingestion, lakehouse ELT and AI on top of trusted data, with Apache NiFi, Spark/Databricks, Airflow, dbt, FastAPI and PostgreSQL. At Freshtrack I built the platform that tracks containers across 24 shipping carriers; recently FIREBRIDGE for NASA Space Apps 2026.',
 };
 
 /** Headline numbers. Every figure comes from a project's own code, docs or receipts. */
 export const proof = [
+  { value: '24', label: 'shipping carriers unified behind one real-time API', source: 'Freshtrack tracking platform' },
+  { value: '300 users', label: 'served in ~5 s from cache on a 4-CPU box', source: 'Freshtrack load test' },
   { value: '666.9M', label: 'satellite records archived and audited', source: 'FIREBRIDGE · 23.3 GiB Parquet' },
-  { value: '25.5→4.7 s', label: 'analysis time-to-ready after regional indexing', source: 'FIREBRIDGE · PostGIS' },
   { value: '3+ yrs', label: 'building production data systems', source: 'Freshtrack · Brocoli Data · AGILISYS' },
-  { value: '138', label: 'automated tests on a grounded LLM agent', source: 'FIREBRIDGE AI agent' },
 ];
 
 export type Link = { label: string; href: string };
 export type Step = { name: string; detail?: string };
+
+/** Flagship production project at Freshtrack. Figures come from the project's README and load-test reports. */
+export const platform = {
+  slug: 'tracking-platform',
+  badge: 'Freshtrack · production platform',
+  name: 'Container Tracking & Schedules Platform',
+  tagline: 'One real-time API over 24 shipping carriers and IoT trackers.',
+  summary:
+    'Every carrier publishes sailing schedules and container events differently: different APIs, websites, formats and limits. I built the service that collects them on demand, normalises every event into one language with a DCSA-standard API, adds truck and cold-chain IoT trackers, caches aggressively and records every request, carrier call and processing step in its own monitoring console.',
+  role: 'Designed and built it end to end; author of 1,412 of its 1,421 commits.',
+  metrics: [
+    { value: '24', label: 'carriers' },
+    { value: '3', label: 'IoT tracker providers' },
+    { value: '~5 s', label: '300 users, warm cache' },
+    { value: '2,000+', label: 'test functions' },
+  ],
+  carriers: [
+    'Maersk', 'MSC', 'CMA CGM', 'Hapag-Lloyd', 'ONE', 'COSCO', 'Evergreen', 'HMM', 'Yang Ming', 'ZIM', 'OOCL', 'Wan Hai',
+    'PIL', 'X-Press Feeders', 'SITC', 'KMTC', 'Grimaldi', 'Arkas', 'Tailwind', 'BOLUDA', 'Samskip', 'WEC Lines', 'Akkon', 'China United Lines',
+  ],
+  architecture: [
+    { name: '24 carriers + IoT trackers', detail: 'APIs · websites · devices' },
+    { name: 'Collectors', detail: 'HTTP · warm browser sessions' },
+    { name: 'Normalise', detail: 'one event language · DCSA' },
+    { name: 'Cache & guards', detail: '8 h results · bounded waits' },
+    { name: 'FastAPI', detail: 'REST · SSE stream · DCSA' },
+    { name: 'Monitor', detail: 'every request & carrier call' },
+  ] as Step[],
+  decisions: [
+    {
+      title: 'Cache first, carriers last',
+      body: 'Results are cached for 8 hours and “lane not served” answers for 4. Repeat searches cost milliseconds and never touch a carrier, so latency stays flat as users grow.',
+    },
+    {
+      title: 'Every wait has a bound',
+      body: 'Live fan-outs share an admission gate. Overload gets an instant 429 with Retry-After instead of hanging, and results stream in carrier by carrier over SSE.',
+    },
+    {
+      title: 'See every exchange',
+      body: 'A monitoring console records each request, step and carrier call for about 35 µs per request, masks secrets and sends email alerts when something degrades.',
+    },
+  ],
+  stack: ['Python', 'FastAPI', 'Pydantic', 'Playwright', 'curl_cffi', 'SSE', 'SQLite', 'Docker Compose', 'Nginx'],
+  links: { caseStudy: '/work/tracking-platform/' },
+};
+
+/** More production work at Freshtrack (private repositories). */
+export const freshtrackProjects = [
+  {
+    name: 'Real-time container tracking & alerting',
+    meta: '2025 – now · 749 commits',
+    body: 'Ingests container events from tracking aggregators and carrier APIs (Maersk, CMA CGM, MSC, Samskip…), merges them into one event model and dispatches 14 alert types to the Freshtrack dashboard.',
+    points: ['ETA/ETD risk, discharge and gate-out (demurrage), transshipment, voyage changes, predicted missing containers', 'Carrier sources win over aggregators; chronology guard; events propagated across a booking’s containers', 'Deduplicated, retried and fully audited alert delivery'],
+    flow: ['carrier & tracking APIs', 'unified events', 'PostgreSQL', 'alerts'],
+    stack: ['Python', 'PostgreSQL', 'Apache NiFi', 'Docker', 'GitHub Actions'],
+    icon: 'activity',
+  },
+  {
+    name: 'IntelliDocs: AI document extraction',
+    meta: '2025 – 2026 · 176 commits',
+    body: 'Replaces manual data entry for logistics documents (bills of lading, customs declarations, multi-carrier invoices) with LLM extraction, validation and mismatch alerts in order workflows.',
+    points: ['Classification, field extraction and validation per document type', 'Mismatch alerts when documents disagree with the order'],
+    flow: ['PDFs & scans', 'classify', 'Gemini extraction', 'validate'],
+    stack: ['Python', 'FastAPI', 'Gemini', 'Streamlit', 'Docker'],
+    icon: 'file',
+  },
+  {
+    name: 'Truck ETA engine',
+    meta: 'Road transport',
+    body: 'Predicts road-transport arrival times from historical GPS trajectories split into route segments, combined with live tracking.',
+    points: ['Segment matching and per-segment coefficients learned from past trips', 'ETA service and maps gateway as Go microservices'],
+    flow: ['GPS history', 'route segments', 'coefficients', 'ETA API'],
+    stack: ['Python', 'Go', 'Docker'],
+    icon: 'map-pin',
+  },
+  {
+    name: 'Carrier performance analytics',
+    meta: 'Weekly ETL · dashboards',
+    body: 'Measures how late carrier events reach us and how long containers spend at each port stage, then surfaces it in Superset and a React analytics app.',
+    points: ['Reception latency and five port-stage durations per carrier', 'Subscription health and duplicate detection views'],
+    flow: ['carrier events', 'weekly ETL', 'PostgreSQL', 'Superset · React'],
+    stack: ['Python', 'PostgreSQL', 'Apache Superset', 'React', 'Recharts'],
+    icon: 'chart',
+  },
+  {
+    name: 'Data platform & ELT',
+    meta: 'Since Dec 2023',
+    body: 'The platform under it all: NiFi pipelines with failure handling, backpressure and alerting, and ELT on Azure Databricks with Parquet storage.',
+    points: ['Faster analytics and lower cloud cost with Parquet on ADLS Gen2', 'Automated alerting on pipeline failures'],
+    flow: ['sources', 'Apache NiFi', 'ADLS · Parquet', 'Databricks'],
+    stack: ['Apache NiFi', 'Azure Databricks', 'ADLS Gen2', 'Spark', 'Parquet'],
+    icon: 'database',
+  },
+  {
+    name: 'Automation & AI assistant',
+    meta: 'n8n · LLM',
+    body: 'Self-hosted n8n booking workflows that handle carrier emails, backend integration and container updates, plus an AI assistant that turns dashboard metrics into insights.',
+    points: ['Booking management without manual copy-paste', 'Streaming, actionable insights from analytics'],
+    flow: ['emails & bookings', 'n8n', 'backend', 'AI insights'],
+    stack: ['n8n', 'LLMs', 'Python'],
+    icon: 'sparkles',
+  },
+] as const;
 
 export const featured = {
   slug: 'firebridge',
@@ -166,6 +269,7 @@ export const stackLayers: { layer: string; tools: { name: string; used: ContextI
       { name: 'n8n', used: ['freshtrack'] },
       { name: 'Cloud Functions · Lambda', used: ['brocoli'] },
       { name: 'REST & carrier APIs', used: ['freshtrack', 'firebridge'] },
+      { name: 'Playwright · curl_cffi', used: ['freshtrack'] },
     ],
   },
   {
@@ -190,8 +294,8 @@ export const stackLayers: { layer: string; tools: { name: string; used: ContextI
     layer: 'Orchestrate',
     tools: [
       { name: 'Apache Airflow', used: ['firebridge'] },
-      { name: 'Docker Compose', used: ['firebridge', 'docker'] },
-      { name: 'GitHub Actions', used: ['firebridge'] },
+      { name: 'Docker Compose', used: ['freshtrack', 'firebridge', 'docker'] },
+      { name: 'GitHub Actions', used: ['freshtrack', 'firebridge'] },
     ],
   },
   {
@@ -200,9 +304,10 @@ export const stackLayers: { layer: string; tools: { name: string; used: ContextI
       { name: 'PostgreSQL', used: ['freshtrack', 'firebridge'] },
       { name: 'PostGIS', used: ['firebridge'] },
       { name: 'BigQuery', used: ['brocoli'] },
-      { name: 'FastAPI · Flask', used: ['firebridge', 'agilisys'] },
+      { name: 'FastAPI · Flask', used: ['freshtrack', 'firebridge', 'agilisys'] },
+      { name: 'Go', used: ['freshtrack'] },
       { name: 'Node.js · Fastify', used: ['firebridge', 'docker'] },
-      { name: 'SQLite', used: ['firebridge', 'docker'] },
+      { name: 'SQLite', used: ['freshtrack', 'firebridge', 'docker'] },
     ],
   },
   {
@@ -217,9 +322,9 @@ export const stackLayers: { layer: string; tools: { name: string; used: ContextI
   {
     layer: 'Visualise',
     tools: [
-      { name: 'Dashboards', used: ['freshtrack'] },
+      { name: 'Superset · dashboards', used: ['freshtrack'] },
       { name: 'Grafana', used: ['iot'] },
-      { name: 'React · MapLibre', used: ['firebridge', 'docker'] },
+      { name: 'React', used: ['freshtrack', 'firebridge', 'docker'] },
     ],
   },
 ];
@@ -236,16 +341,16 @@ export const experience = [
     period: 'Dec 2023 – Present',
     place: 'Agadir · On-site',
     current: true,
-    flow: ['carrier APIs · GPS', 'Apache NiFi', 'ADLS Gen2 · Parquet', 'Databricks · Spark', 'PostgreSQL', 'dashboards · alerts'],
+    flow: ['24 carriers · IoT trackers', 'collectors · NiFi', 'normalise · validate', 'PostgreSQL · ADLS', 'APIs · alerts · dashboards'],
     points: [
-      'Designed the data-platform architecture and Apache NiFi pipelines, with failure handling, backpressure control and automated alerting.',
-      'Built ELT on Azure ADLS Gen2 and Databricks (Spark) with Parquet storage, improving analytics performance and reducing cloud costs.',
-      'Real-time maritime tracking that merges carrier feeds (Maersk, CMA CGM, MSC) into a single PostgreSQL source of truth with live alerts.',
-      'Road-transport ETA prediction from historical GPS trajectory segmentation and real-time tracking.',
-      'OCR document service for order workflows: classification, extraction, validation and mismatch alerts.',
-      'Self-hosted n8n booking workflows, an AI analytics assistant, a vessel-tracking service and carrier-performance dashboards.',
+      'Built the container tracking & sailing schedules platform: 24 carriers and 3 IoT tracker providers behind one real-time API (REST, SSE, DCSA), with caching, bounded concurrency and a console that monitors every request and carrier call.',
+      'Real-time container tracking & alerting: unified event model from carrier and aggregator APIs, deduplication and chronology guards, 14 alert types including ETA/ETD risk, demurrage and missing containers.',
+      'Designed the data-platform architecture and Apache NiFi pipelines with failure handling, backpressure control and automated alerting; ELT on ADLS Gen2 and Databricks (Spark) with Parquet to cut cloud costs.',
+      'AI document platform (Gemini) extracting and validating bills of lading, customs declarations and invoices, with mismatch alerts.',
+      'Road-transport ETA prediction from GPS trajectory segmentation (Python engine, Go services) and real-time tracking.',
+      'Carrier-performance analytics (weekly ETL, PostgreSQL, Superset, React), self-hosted n8n booking automation, an AI analytics assistant and a vessel-tracking service.',
     ],
-    stack: ['Apache NiFi', 'Azure Databricks', 'ADLS Gen2', 'Spark', 'PostgreSQL', 'n8n', 'Python'],
+    stack: ['Python', 'FastAPI', 'Apache NiFi', 'Azure Databricks', 'PostgreSQL', 'Playwright', 'Go', 'n8n'],
   },
   {
     company: 'Brocoli Data',
@@ -286,7 +391,7 @@ export const earlier =
 
 export const about = {
   paragraphs: [
-    'I’m a data engineer based in Agadir, Morocco. Since 2023 I’ve been building the data platform at Freshtrack: Apache NiFi pipelines, ELT on Azure Databricks, real-time tracking of maritime carriers, and the ML services that sit on top, from ETA prediction to OCR.',
+    'I’m a data engineer based in Agadir, Morocco. Since 2023 I’ve been building the data side of Freshtrack: Apache NiFi pipelines and ELT on Azure Databricks, a platform that tracks containers and schedules across 24 shipping carriers in real time, alerting on every shipment milestone, and the ML services on top, from ETA prediction to AI document extraction.',
     'Before that I interned in data engineering at Brocoli Data and in ML at AGILISYS, after a Master’s in Big Data & AI. Lately I’ve been putting LLMs on top of data pipelines, with one rule: the model explains numbers that code has already computed and verified.',
   ],
   facts: [
