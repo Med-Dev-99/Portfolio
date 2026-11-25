@@ -148,6 +148,7 @@ const ogTemplate = ({ query, title, subtitle, foot }) => `<!doctype html><html><
 
 const ogs = [
   { file: 'og.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> engineers <b>WHERE</b> name = <i>\'Mohamed El Korchi\'</i>;', title: 'Raw data in.<br><span>Reliable answers out.</span>', subtitle: 'Data Engineer building real-time pipelines, lakehouse platforms and grounded AI. NiFi · Spark · Databricks · Airflow · dbt · PostGIS.', foot: 'mohamedelkorchi.com' },
+  { file: 'og-tracking-platform.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> case_studies <b>WHERE</b> project = <i>\'tracking-platform\'</i>;', title: 'Tracking &amp; Schedules<br><span>Platform</span>', subtitle: 'One real-time API over 24 shipping carriers and IoT trackers: normalised, cached, load-tested and monitored end to end. Built at Freshtrack.', foot: 'mohamedelkorchi.com/work/tracking-platform' },
   { file: 'og-firebridge.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> case_studies <b>WHERE</b> project = <i>\'firebridge\'</i>;', title: 'FIREBRIDGE', subtitle: '666.9M NASA satellite fire records, archived, audited and served as one comparable fire history. NASA Space Apps Challenge 2026.', foot: 'mohamedelkorchi.com/work/firebridge' },
   { file: 'og-docker-inspector.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> case_studies <b>WHERE</b> project = <i>\'docker-inspector\'</i>;', title: 'Docker Inspector', subtitle: 'A flight recorder for your containers: crash diagnosis, 7-day history and configuration audits for Docker on Linux.', foot: 'mohamedelkorchi.com/work/docker-inspector' },
 ];
