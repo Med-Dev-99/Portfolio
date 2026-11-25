@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import SqlKicker from '../components/SqlKicker.astro';
+---
+
+<Base title="Page not found · Mohamed El Korchi">
+  <section class="wrap grid min-h-[70vh] place-content-center py-24 text-center">
+    <SqlKicker q="SELECT * FROM pages WHERE path = 'this-one'; -- 0 rows" class="justify-self-center" />
+    <h1 class="mt-5 text-[clamp(40px,7vw,80px)] tracking-[-.045em]">404: no rows returned.</h1>
+    <p class="mx-auto mt-5 max-w-md text-lg text-fg-2">This page doesn't exist. The rest of the site does.</p>
+    <div class="mt-9 flex justify-center gap-3">
+      <a href="/" class="btn btn-primary"><Icon name="arrow-left" /> Back home</a>
+      <a href="/#work" class="btn">Projects</a>
+    </div>
+  </section>
+</Base>
