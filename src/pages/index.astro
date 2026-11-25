@@ -7,8 +7,9 @@ import ArchFlow from '../components/ArchFlow.astro';
 import PipelineSim from '../components/PipelineSim.astro';
 import HeroStream from '../components/HeroStream.astro';
 import StackLineage from '../components/StackLineage.astro';
+import MonitorFeed from '../components/MonitorFeed.astro';
 import {
-  site, hero, proof, featured, dockerInspector, moreProjects,
+  site, hero, proof, platform, freshtrackProjects, featured, dockerInspector, moreProjects,
   experience, earlier, about, principles, education, credentials,
 } from '../data/profile';
 ---
@@ -41,8 +42,55 @@ import {
         <p class="m-0 text-lg text-fg-2">Problem, architecture, the decisions that mattered, and what they achieved.</p>
       </header>
 
-      <!-- FIREBRIDGE -->
+      <!-- FRESHTRACK TRACKING PLATFORM -->
       <article class="card overflow-hidden" data-reveal>
+        <div class="grid gap-10 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:p-10">
+          <div class="flex flex-col">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-md border border-primary/30 bg-primary/8 px-2 py-1 font-mono text-[11.5px] text-primary">{platform.badge}</span>
+              <span class="inline-flex items-center gap-1.5 rounded-md border border-green/30 bg-green/8 px-2 py-1 font-mono text-[11.5px] text-green"><span class="size-1.5 rounded-full bg-green"></span>real-time</span>
+            </div>
+            <h3 class="mt-5 text-[clamp(30px,4vw,46px)] tracking-[-.045em]">{platform.name}</h3>
+            <p class="mt-2 text-[clamp(18px,2vw,21px)] leading-snug text-fg">{platform.tagline}</p>
+            <p class="mt-4 text-[15.5px] text-fg-2">{platform.summary}</p>
+            <p class="mt-4 rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-[14px] text-fg-2"><span class="label mr-2">my role</span>{platform.role}</p>
+            <dl class="m-0 mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {platform.metrics.map((m) => (
+                <div class="flex flex-col">
+                  <dd class="tnum order-1 m-0 text-2xl font-semibold tracking-tight">{m.value}</dd>
+                  <dt class="order-2 font-mono text-[11px] text-muted">{m.label}</dt>
+                </div>
+              ))}
+            </dl>
+            <div class="mt-8 flex flex-wrap gap-3 lg:mt-auto lg:pt-8">
+              <a href={platform.links.caseStudy} class="btn btn-primary">Read the case study <Icon name="arrow-right" /></a>
+            </div>
+          </div>
+          <div class="lg:self-center">
+            <MonitorFeed />
+            <p class="m-0 mt-3 font-mono text-[11.5px] text-muted">The real console records every inbound request, carrier call and processing step.</p>
+          </div>
+        </div>
+        <div class="border-t border-line px-6 py-6 sm:px-8 lg:px-10">
+          <ArchFlow steps={platform.architecture} />
+        </div>
+        <div class="grid border-t border-line md:grid-cols-3">
+          {platform.decisions.map((dec, i) => (
+            <div class="border-line p-6 sm:p-8 md:border-l md:first:border-l-0 [&:not(:first-child)]:border-t md:[&:not(:first-child)]:border-t-0">
+              <p class="label m-0">decision {String(i + 1).padStart(2, '0')}</p>
+              <p class="m-0 mt-2 text-[16.5px] font-semibold leading-snug tracking-tight">{dec.title}</p>
+              <p class="m-0 mt-2 text-[14.5px] leading-relaxed text-fg-2">{dec.body}</p>
+            </div>
+          ))}
+        </div>
+        <div class="flex flex-wrap items-center gap-2 border-t border-line bg-surface-2/60 px-6 py-4 sm:px-8 lg:px-10">
+          <span class="label mr-2">stack</span>
+          {platform.stack.map((t) => <span class="tag">{t}</span>)}
+        </div>
+      </article>
+
+      <!-- FIREBRIDGE -->
+      <article class="card mt-6 overflow-hidden" data-reveal>
         <div class="grid gap-10 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:p-10">
           <div class="flex flex-col">
             <div class="flex flex-wrap items-center gap-2">
@@ -121,10 +169,47 @@ import {
         </div>
       </article>
 
+      <!-- MORE FROM FRESHTRACK -->
+      <div class="mt-16" data-reveal>
+        <div class="mb-6 grid max-w-3xl gap-2">
+          <SqlKicker q="SELECT * FROM projects WHERE company = 'Freshtrack' AND status = 'production';" />
+          <h3 class="text-[clamp(24px,2.8vw,34px)] tracking-[-.035em]">More from Freshtrack</h3>
+          <p class="m-0 text-fg-2">The production systems behind container tracking, documents, ETAs and analytics. Their repositories are private, so here is what each one does.</p>
+        </div>
+        <ul class="m-0 grid list-none gap-4 p-0 md:grid-cols-2 lg:grid-cols-3">
+          {freshtrackProjects.map((p) => (
+            <li class="card flex flex-col p-6">
+              <div class="flex items-center justify-between gap-3">
+                <span class="grid size-10 place-items-center rounded-xl border border-line bg-surface-2 text-primary"><Icon name={p.icon} class="size-5" /></span>
+                <span class="text-right font-mono text-[11px] text-muted">{p.meta}</span>
+              </div>
+              <h4 class="mt-4 text-[18px] leading-snug tracking-tight">{p.name}</h4>
+              <p class="m-0 mt-2 text-[14.5px] leading-relaxed text-fg-2">{p.body}</p>
+              <ul class="m-0 mt-3 grid list-none gap-1.5 p-0">
+                {p.points.map((pt) => (
+                  <li class="flex gap-2.5 text-[13.5px] leading-snug text-fg-2"><Icon name="check" class="mt-0.5 size-3.5 shrink-0 text-green" /><span>{pt}</span></li>
+                ))}
+              </ul>
+              <div class="mt-auto pt-5">
+                <p class="m-0 flex flex-wrap items-center gap-1.5 font-mono text-[11.5px] text-fg-2">
+                  {p.flow.map((f, i) => (
+                    <>
+                      {i > 0 && <span class="text-muted">→</span>}
+                      <span class="rounded border border-line bg-surface-2 px-1.5 py-0.5">{f}</span>
+                    </>
+                  ))}
+                </p>
+                <p class="m-0 mt-3 font-mono text-[11px] text-muted">{p.stack.join(' · ')}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
       <!-- MORE PROJECTS -->
       <div class="mt-16" data-reveal>
         <div class="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-          <h3 class="text-2xl">More projects</h3>
+          <h3 class="text-2xl">Side projects &amp; research</h3>
           <p class="sql m-0 text-[12px]"><span class="c">-- {moreProjects.length} rows · streaming, ETL, ML research</span></p>
         </div>
         <div class="overflow-hidden rounded-[14px] border border-line bg-surface">
