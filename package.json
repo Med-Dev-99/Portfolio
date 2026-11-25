@@ -1,0 +1,30 @@
+{
+  "name": "mohamedelkorchi-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Portfolio of Mohamed El Korchi, Data Engineer: mohamedelkorchi.com",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "resume": "node scripts/build-resume.mjs",
+    "deploy": "bash deploy/deploy.sh"
+  },
+  "engines": {
+    "node": ">=22.23.4"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.6",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "@tailwindcss/vite": "4.3.5",
+    "astro": "7.4.11",
+    "tailwindcss": "4.3.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "playwright-core": "1.65.0",
+    "typescript": "5.9.3"
+  }
+}
