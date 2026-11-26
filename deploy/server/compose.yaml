@@ -1,0 +1,37 @@
+# Production service for mohamedelkorchi.com, installed at /opt/portfolio/compose.yaml.
+#
+# Started only by /usr/local/sbin/portfolio-gateway, as project portfolio-blue or portfolio-green
+# with PORTFOLIO_IMAGE=portfolio-site:<revision>. A new release runs next to the old one until it
+# is healthy, so deploys have no downtime. The FIREBRIDGE proxy terminates TLS and reaches the site
+# through the alias portfolio-site on the shared network; no host port is published.
+services:
+  site:
+    image: ${PORTFOLIO_IMAGE:?set by portfolio-gateway}
+    restart: unless-stopped
+    # Non-root whatever the image says (nginx:nginx in the Alpine runtime image).
+    user: '100:101'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:size=16m,mode=1777']
+    networks:
+      web:
+        aliases: [portfolio-site]
+    mem_limit: 64m
+    cpus: 0.5
+    pids_limit: 64
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8080/healthz']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      start_interval: 1s
+    logging:
+      driver: json-file
+      options: {max-size: '5m', max-file: '2'}
+
+networks:
+  web:
+    external: true
+    name: firebridge-webapp_web
