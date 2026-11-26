@@ -6,3 +6,4 @@ dist/
 *.log
 .DS_Store
 deploy/proxy/__pycache__/
+portfolio-image.tar.gz
