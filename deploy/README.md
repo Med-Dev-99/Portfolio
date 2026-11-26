@@ -51,11 +51,23 @@ Internet ──443──▶ firebridge-webapp-proxy (Nginx, TLS, HSTS)
    npm run server:setup -- --ci-key ~/.ssh/portfolio-ci.pub
    ```
    The script is idempotent. It validates the sudo rule (`visudo -c`) and the sshd change (`sshd -t`, and checks that `root` and the FIREBRIDGE users are still allowed) before reloading sshd. It prints the line for `DEPLOY_KNOWN_HOSTS`.
-2. **GitHub.** In the repository, go to Settings → Environments → **New environment** `production`, and restrict deployments to the `main` branch. Then add:
-   - Secret `DEPLOY_SSH_KEY`: the content of `~/.ssh/portfolio-ci`, the private key. Delete the local copy afterwards.
-   - Variable `DEPLOY_HOST`: `portfolio-deploy@13.140.218.234`
-   - Variable `DEPLOY_KNOWN_HOSTS`: the line printed by the setup script
-   - Variable `DEPLOY_ENABLED`: `true`. Set it as a repository variable, or in the environment.
+2. **GitHub.** Create the environment `production`, restricted to the `main` branch, with:
+   - environment secret `DEPLOY_SSH_KEY`: the content of `~/.ssh/portfolio-ci`, the private key. Delete the local copy afterwards.
+   - environment variable `DEPLOY_HOST`: `portfolio-deploy@13.140.218.234`
+   - environment variable `DEPLOY_KNOWN_HOSTS`: the server's ed25519 host-key line, as printed by the setup script.
+
+   Also add the **repository** variable `DEPLOY_ENABLED` = `true`. It has to be a repository variable: GitHub evaluates the deploy job's `if:` before the job enters the environment, so environment variables are not visible there.
+
+   With the GitHub CLI:
+   ```bash
+   R=Med-Dev-99/Portfolio
+   echo '{"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}' | gh api -X PUT repos/$R/environments/production --input -
+   gh api -X POST repos/$R/environments/production/deployment-branch-policies -f name=main -f type=branch
+   gh secret set DEPLOY_SSH_KEY --env production -R $R < ~/.ssh/portfolio-ci
+   gh variable set DEPLOY_HOST --env production -R $R --body 'portfolio-deploy@13.140.218.234'
+   gh variable set DEPLOY_KNOWN_HOSTS --env production -R $R --body "13.140.218.234 $(ssh root@13.140.218.234 'cut -d" " -f1,2 /etc/ssh/ssh_host_ed25519_key.pub')"
+   gh variable set DEPLOY_ENABLED -R $R --body true
+   ```
 3. **Packages.** After the first push to `main`, open the `portfolio` package on GitHub, go to Package settings, and make it public if you want `docker run ghcr.io/med-dev-99/portfolio` to work for everyone.
 
 ## Day to day
