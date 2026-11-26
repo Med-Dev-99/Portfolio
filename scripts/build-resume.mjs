@@ -58,6 +58,8 @@ const pdfFonts = `
   @font-face { font-family: Mono; font-weight: 500; src: url(${staticFont('GeistMono-Medium.woff2')}) format('woff2'); }
   @font-face { font-family: Mono; font-weight: 600; src: url(${staticFont('GeistMono-SemiBold.woff2')}) format('woff2'); }
 `;
+/** Keeps hyphenated words (exactly-once, data-quality) on one line for ATS parsers. */
+const keepHyphens = (html) => html.replace(/(\S+-\S+)/g, '<span style="white-space:nowrap">$1</span>');
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /* ---------------- Resume ---------------- */
@@ -94,21 +96,21 @@ const resumeHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><
 <header>
   <div><h1>${esc(site.name)}</h1><div class="role">${esc(headline)}</div></div>
   <div class="contact">
-    ${esc(site.location)} | ${esc(contact.phone)}<br>
-    <a href="mailto:${esc(site.email)}">${esc(site.email)}</a><br>
+    ${esc(site.location)} | ${esc(contact.mobility)}<br>
+    ${esc(contact.phone)} | <a href="mailto:${esc(site.email)}">${esc(site.email)}</a><br>
     <a href="${esc(site.url)}">${esc(contact.website)}</a> | <a href="${esc(site.github)}">${esc(contact.github)}</a><br>
     <a href="${esc(site.linkedin)}">${esc(contact.linkedin)}</a>
   </div>
 </header>
 
 <h2>Summary</h2>
-<p class="summary">${esc(summary)}</p>
+<p class="summary">${keepHyphens(esc(summary))}</p>
 
 <h2>Work Experience</h2>
 ${experience.filter((job) => job.resume !== false).map((job) => `<div class="item">
   <div class="row"><span class="title">${esc(job.role)} | <span class="org">${esc(job.company)}</span> <span class="meta">| ${esc(job.place)}</span></span><span class="date">${esc(job.period)}</span></div>
   <div class="stack">${esc(job.stack.join(', '))}</div>
-  <ul>${job.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+  <ul>${job.points.map((p) => `<li>${keepHyphens(esc(p))}</li>`).join('')}</ul>
 </div>`).join('')}
 
 <h2>Projects</h2>
@@ -116,7 +118,7 @@ ${projects.map((p) => `<div class="item">
   <div class="title">${esc(p.name)}</div>
   <div class="meta">${esc(p.role)} | <a href="https://${esc(p.link)}">${esc(p.link)}</a></div>
   <div class="stack">${esc(p.stack)}</div>
-  <ul>${p.points.map((pt) => `<li>${esc(pt)}</li>`).join('')}</ul>
+  <ul>${p.points.map((pt) => `<li>${keepHyphens(esc(pt))}</li>`).join('')}</ul>
 </div>`).join('')}
 
 <h2>Technical Skills</h2>
@@ -125,7 +127,7 @@ ${projects.map((p) => `<div class="item">
 <div class="compact">
   <h2>Education</h2>
   ${education.map((e) => `<div class="item"><div class="row"><span><span class="title">${esc(e.degree)}</span> <span class="meta">| ${esc(e.school)}</span></span><span class="date">${esc(e.period)}</span></div>${e.thesis ? `<div class="meta" style="display:block">Thesis: ${esc(e.thesis)}</div>` : ''}</div>`).join('')}
-  <h2>Certifications &amp; Awards</h2>
+  <h2>Certifications</h2>
   ${resumeCredentials.map((c) => `<div class="item"><span class="title">${esc(c.name)}</span> <span class="meta">| ${esc(c.issuer)}</span></div>`).join('')}
   <h2>Languages</h2>
   <p>${esc(spokenLanguages)}</p>
