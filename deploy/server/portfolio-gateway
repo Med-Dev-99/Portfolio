@@ -1,0 +1,218 @@
+#!/usr/bin/python3
+"""Restricted, image-only deployment gateway for mohamedelkorchi.com.
+
+Installed root-owned at /usr/local/sbin/portfolio-gateway by deploy/server/setup.sh.
+The CI key of the `portfolio-deploy` user is forced to run it through a single sudo rule, so
+whoever holds that key can do exactly this and nothing else. The action comes from
+SSH_ORIGINAL_COMMAND:
+
+  status                       print the deployment receipt (JSON)
+  image <revision> <sha256>    read `docker save | gzip` from stdin; check size, checksum and that
+                               the archive only contains portfolio-site:<revision>; load it and
+                               verify its OCI source and revision labels
+  activate <revision>          blue/green switch to portfolio-site:<revision>, verified end to end
+  rollback                     switch back to the previous revision (its image is kept locally)
+
+As root, for maintenance:  SSH_ORIGINAL_COMMAND=status /usr/local/sbin/portfolio-gateway
+"""
+import fcntl
+import hashlib
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+import tarfile
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path('/opt/portfolio')
+COMPOSE = ROOT / 'compose.yaml'
+RECEIPT = ROOT / 'deployment.json'
+LOG = ROOT / 'logs' / 'gateway.log'
+REPO = 'https://github.com/Med-Dev-99/Portfolio'
+IMAGE = 'portfolio-site'
+COLOURS = ('portfolio-blue', 'portfolio-green')
+LEGACY = ('portfolio',)  # the first installation (stock Nginx image + bind-mounted releases)
+SITE = 'mohamedelkorchi.com'
+MAX_BYTES = 256 * 1024**2
+KEEP_IMAGES = 3
+REVISION = re.compile(r'[0-9a-f]{40}')
+ENV = {'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'HOME': '/root'}
+
+
+def log(message):
+    LOG.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with LOG.open('a') as f:
+        f.write(f'{datetime.now(timezone.utc).isoformat(timespec="seconds")} {message}\n')
+
+
+def say(message):
+    print(message, flush=True)
+    log(message)
+
+
+def run(*cmd, timeout=120, env=None, check=True):
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env={**ENV, **(env or {})})
+    if check and r.returncode:
+        log(f'FAILED ({r.returncode}): {" ".join(cmd)}\n{(r.stderr or r.stdout).strip()[-3000:]}')
+        raise RuntimeError(f'step failed: {" ".join(cmd[:3])} (details in {LOG})')
+    return r.stdout.strip()
+
+
+def receipt():
+    return json.loads(RECEIPT.read_text()) if RECEIPT.exists() else {'state': 'not_deployed', 'history': []}
+
+
+def containers(project, running_only=False):
+    args = ['docker', 'ps', '-q', '--filter', f'label=com.docker.compose.project={project}']
+    if not running_only:
+        args.insert(2, '-a')
+    return run(*args).split()
+
+
+def verify_image(rev):
+    info = json.loads(run('docker', 'image', 'inspect', f'{IMAGE}:{rev}'))[0]
+    labels = info['Config'].get('Labels') or {}
+    if labels.get('org.opencontainers.image.source') != REPO or labels.get('org.opencontainers.image.revision') != rev:
+        raise ValueError('image source/revision labels do not match this repository and revision')
+
+
+def check_archive(path, rev):
+    """The archive may only create portfolio-site:<rev>: never retag another image on this host."""
+    expected = f'{IMAGE}:{rev}'
+    with tarfile.open(path, 'r:gz') as tar:
+        names = set(tar.getnames())
+        manifest = json.load(tar.extractfile('manifest.json'))
+        tags = [t for entry in manifest for t in (entry.get('RepoTags') or [])]
+        if len(manifest) != 1 or tags != [expected]:
+            raise ValueError(f'archive must contain exactly {expected}, found {tags}')
+        if 'index.json' in names:
+            for m in json.load(tar.extractfile('index.json')).get('manifests', []):
+                name = (m.get('annotations') or {}).get('io.containerd.image.name')
+                if name and name not in (expected, f'docker.io/library/{expected}'):
+                    raise ValueError(f'archive names another image: {name}')
+
+
+def receive(rev, digest):
+    incoming = ROOT / 'incoming'
+    incoming.mkdir(mode=0o700, exist_ok=True)
+    partial = incoming / f'{rev}.tar.gz.partial'
+    sha, size = hashlib.sha256(), 0
+    try:
+        with partial.open('wb') as out:
+            partial.chmod(0o600)
+            while chunk := sys.stdin.buffer.read(1024**2):
+                size += len(chunk)
+                if size > MAX_BYTES:
+                    raise ValueError('image archive exceeds the size limit')
+                sha.update(chunk)
+                out.write(chunk)
+        if sha.hexdigest() != digest:
+            raise ValueError('archive checksum mismatch')
+        check_archive(partial, rev)
+        run('docker', 'load', '--input', str(partial), timeout=300)
+        verify_image(rev)
+        say(json.dumps({'image': 'loaded', 'revision': rev, 'bytes': size}))
+    finally:
+        partial.unlink(missing_ok=True)
+
+
+def public_revision():
+    r = subprocess.run(['curl', '-fsS', '--max-time', '5', '--resolve', f'{SITE}:443:127.0.0.1',
+                        f'https://{SITE}/version.txt'], capture_output=True, text=True, env=ENV)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def activate(rev):
+    verify_image(rev)
+    image = f'{IMAGE}:{rev}'
+    old = [p for p in (*COLOURS, *LEGACY) if containers(p, running_only=True)]
+    target = 'portfolio-green' if 'portfolio-blue' in old else 'portfolio-blue'
+    old = [p for p in old if p != target]
+    say(f'starting {image} as {target}' + (f' next to {", ".join(old)}' if old else ''))
+
+    # Leftovers of an interrupted deploy under the target name are replaced.
+    if ids := containers(target):
+        run('docker', 'rm', '-f', *ids)
+    try:
+        run('docker', 'compose', '-p', target, '-f', str(COMPOSE), 'up', '-d', '--wait', '--wait-timeout', '90',
+            env={'PORTFOLIO_IMAGE': image}, timeout=150)
+        cid = containers(target, running_only=True)[0]
+        if run('docker', 'exec', cid, 'wget', '-q', '-O', '-', 'http://127.0.0.1:8080/version.txt') != rev:
+            raise RuntimeError('new container does not serve the expected revision')
+    except Exception:
+        if ids := containers(target):
+            run('docker', 'rm', '-f', *ids, check=False)
+        raise
+
+    # Both releases now answer on the alias; let the proxy's DNS cache (valid=10s) see the new one.
+    time.sleep(12)
+    stopped = [c for p in old for c in containers(p, running_only=True)]
+    if stopped:
+        run('docker', 'stop', '-t', '10', *stopped, timeout=60)
+
+    deadline = time.monotonic() + 45
+    while (served := public_revision()) != rev and time.monotonic() < deadline:
+        time.sleep(2)
+    if served != rev:
+        say(f'public check failed (served {served!r}); restoring the previous release')
+        if stopped:
+            run('docker', 'start', *stopped, check=False)
+        run('docker', 'rm', '-f', *containers(target), check=False)
+        raise RuntimeError('the site did not serve the new revision through the proxy; previous release restored')
+
+    if stopped:
+        run('docker', 'rm', *stopped, check=False)
+    state = receipt()
+    history = [rev, *[h for h in state.get('history', []) if h != rev]][:10]
+    RECEIPT.write_text(json.dumps({
+        'state': 'active', 'revision': rev, 'image': image, 'project': target,
+        'activated_at': datetime.now(timezone.utc).isoformat(timespec='seconds'),
+        'repository': REPO, 'history': history,
+    }, indent=2) + '\n')
+    prune(history[:KEEP_IMAGES])
+    say(json.dumps({'deployed': rev, 'project': target, 'url': f'https://{SITE}'}))
+
+
+def prune(keep):
+    for tag in run('docker', 'image', 'ls', IMAGE, '--format', '{{.Tag}}').split():
+        if tag not in keep:
+            run('docker', 'image', 'rm', f'{IMAGE}:{tag}', check=False)
+
+
+def main():
+    if os.geteuid() != 0:
+        raise PermissionError('the gateway runs as root, through its sudo rule')
+    args = shlex.split(os.environ.get('SSH_ORIGINAL_COMMAND', ''))
+    if args == ['status']:
+        print(json.dumps(receipt(), indent=2))
+        return
+    with (ROOT / 'deployment.lock').open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError('another deployment is in progress') from None
+        if len(args) == 3 and args[0] == 'image' and REVISION.fullmatch(args[1]) and re.fullmatch(r'[0-9a-f]{64}', args[2]):
+            receive(args[1], args[2])
+        elif len(args) == 2 and args[0] == 'activate' and REVISION.fullmatch(args[1]):
+            activate(args[1])
+        elif args == ['rollback']:
+            history = receipt().get('history', [])
+            if len(history) < 2:
+                raise RuntimeError('no previous revision to roll back to')
+            say(f'rolling back {history[0]} → {history[1]}')
+            activate(history[1])
+        else:
+            raise ValueError('unsupported command (status | image <rev> <sha256> | activate <rev> | rollback)')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as error:
+        log(f'REJECTED/FAILED: {error}')
+        print(f'portfolio deploy rejected or failed: {error}', file=sys.stderr)
+        sys.exit(1)
