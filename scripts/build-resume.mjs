@@ -78,7 +78,7 @@ const resumeHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><
   .compact .item { margin-bottom: 4px; }
 </style></head><body>
 <header>
-  <div><h1>${esc(site.name)}</h1><div class="role">${esc(site.role)} · Data Platforms · AI</div></div>
+  <div><h1>${esc(site.name)}</h1><div class="role">${esc(site.role)} · Logistics data</div></div>
   <div class="contact">
     ${esc(site.location)} · ${esc(contact.phone)}<br>
     <a href="mailto:${esc(site.email)}">${esc(site.email)}</a> · <a href="${esc(site.url)}">${esc(contact.website)}</a><br>
@@ -147,7 +147,7 @@ const ogTemplate = ({ query, title, subtitle, foot }) => `<!doctype html><html><
 </div></body></html>`;
 
 const ogs = [
-  { file: 'og.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> engineers <b>WHERE</b> name = <i>\'Mohamed El Korchi\'</i>;', title: 'Raw data in.<br><span>Reliable answers out.</span>', subtitle: 'Data Engineer building real-time pipelines, lakehouse platforms and grounded AI. NiFi · Spark · Databricks · Airflow · dbt · PostGIS.', foot: 'mohamedelkorchi.com' },
+  { file: 'og.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> engineers <b>WHERE</b> name = <i>\'Mohamed El Korchi\'</i>;', title: 'Raw signals in.<br><span>Trusted events out.</span>', subtitle: 'AI &amp; Data Engineer turning carrier feeds, AIS, IoT sensors and documents into trusted events, risk alerts and predictions. NiFi · n8n · Python · PostGIS · LLMs.', foot: 'mohamedelkorchi.com' },
   { file: 'og-tracking-platform.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> case_studies <b>WHERE</b> project = <i>\'tracking-platform\'</i>;', title: 'Tracking &amp; Schedules<br><span>Platform</span>', subtitle: 'One real-time API over 24 shipping carriers and IoT trackers: normalised, cached, load-tested and monitored end to end. Built at Freshtrack.', foot: 'mohamedelkorchi.com/work/tracking-platform' },
   { file: 'og-firebridge.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> case_studies <b>WHERE</b> project = <i>\'firebridge\'</i>;', title: 'FIREBRIDGE', subtitle: '666.9M NASA satellite fire records, archived, audited and served as one comparable fire history. NASA Space Apps Challenge 2026.', foot: 'mohamedelkorchi.com/work/firebridge' },
   { file: 'og-docker-inspector.png', query: '&gt; <b>SELECT</b> * <b>FROM</b> case_studies <b>WHERE</b> project = <i>\'docker-inspector\'</i>;', title: 'Docker Inspector', subtitle: 'A flight recorder for your containers: crash diagnosis, 7-day history and configuration audits for Docker on Linux.', foot: 'mohamedelkorchi.com/work/docker-inspector' },
