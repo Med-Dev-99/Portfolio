@@ -56,6 +56,14 @@ This renders, with headless Chrome:
 
 `resume.ts` holds resume-only details such as the phone number; the website never imports it. Set `CHROME_PATH` if Chrome isn't found.
 
+The PDF is built to be read by applicant tracking systems (ATS) as well as people:
+
+- Static Geist fonts from [`scripts/fonts/`](scripts/fonts/) (SIL OFL 1.1). Chrome would embed the variable font as Type 3 glyphs, and the bold lines would lose their word spaces when parsed.
+- One column, with standard section names (Summary, Work Experience, Projects, Technical Skills, Education, Certifications & Awards, Languages).
+- Straight quotes and hyphens, and real, clickable links.
+
+To check it, `pdftotext -raw public/resume/Mohamed-El-Korchi-Resume.pdf -` should read cleanly from top to bottom.
+
 ## Images
 
 Screenshots in `public/images/` are pre-optimised WebP files in two widths, named `name-<width>.webp`, and rendered by [`Shot.astro`](src/components/Shot.astro) with `srcset`. To add one:
