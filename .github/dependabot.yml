@@ -1,0 +1,32 @@
+# Weekly update PRs for npm packages, SHA-pinned actions and digest-pinned base images.
+# Each PR runs the full CI (build, smoke test, CVE scan) before anything can be merged.
+# A two-week cooldown skips releases that are too fresh to trust.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      github-actions:
+        patterns: ['*']
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
