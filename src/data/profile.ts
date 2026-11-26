@@ -78,7 +78,7 @@ export type ArchTone = 'cyan' | 'primary' | 'violet' | 'amber' | 'green';
 export type ArchGlyph =
   | 'ship' | 'signal' | 'pin' | 'mail' | 'globe' | 'merge' | 'workflow' | 'browser' | 'layers' | 'geofence'
   | 'columns' | 'scan' | 'shuffle' | 'database' | 'bolt' | 'bell' | 'chart' | 'code' | 'satellite'
-  | 'download' | 'server' | 'spark' | 'monitor';
+  | 'download' | 'server' | 'spark' | 'monitor' | 'gear' | 'cloud' | 'drop';
 export type ArchNode = {
   id: string;
   /** Column (0 = sources) and row (fractions allowed) in the diagram. */
@@ -251,12 +251,114 @@ export const firebridge = {
   } satisfies ArchMap,
 };
 
+/** Open-source platforms rebuilt from Master's coursework (2023) into end-to-end projects (2026). */
+export const predictiveMaintenance = {
+  badge: 'Streaming · MLOps',
+  name: 'Predictive Maintenance Platform',
+  summary:
+    'A simulated fleet of 20 machines streams telemetry; the platform validates it, keeps a Delta lakehouse, scores failure risk on every cycle and alerts before failures happen, then grades its own alerts and retrains itself.',
+  repo: 'https://github.com/Med-Dev-99/Predictive_maintenance',
+  map: {
+    id: 'predmaint',
+    title: 'Predictive maintenance platform architecture',
+    intro: 'A streaming lakehouse with live ML on top. Pick a path, or hover any component.',
+    layers: [
+      { name: 'Source', tone: 'cyan' },
+      { name: 'Ingest', tone: 'primary' },
+      { name: 'Bronze', tone: 'amber' },
+      { name: 'Silver', tone: 'amber' },
+      { name: 'Gold · ML', tone: 'violet' },
+      { name: 'Serve', tone: 'green' },
+    ],
+    nodes: [
+      { id: 'sim', layer: 0, row: 1, icon: 'gear', label: 'Machine fleet', sub: 'AI4I physics', detail: '20 machines simulated from the AI4I 2020 failure rules, with duplicates, late and malformed events injected.' },
+      { id: 'kafka', layer: 1, row: 1, icon: 'merge', label: 'Kafka', sub: 'KRaft · keyed', detail: 'Kafka 4.4 in KRaft mode, 6 partitions; telemetry keyed by machine, idempotent producer.' },
+      { id: 'bronze', layer: 2, row: 1, icon: 'columns', label: 'Bronze', sub: 'raw · replayable', detail: 'Every Kafka record as received, on Delta Lake (S3), written by Spark Structured Streaming.' },
+      { id: 'silver', layer: 3, row: 0.4, icon: 'layers', label: 'Silver', sub: 'contract · dedup', detail: 'Validated against the data contract and deduplicated within a 2-minute watermark.' },
+      { id: 'quarantine', layer: 3, row: 1.6, icon: 'scan', label: 'Quarantine', sub: 'rejects + reasons', detail: 'Every rejected record with the rules it broke: malformed JSON, out-of-range values, wrong units.' },
+      { id: 'score', layer: 4, row: 0.4, icon: 'spark', label: 'Live scoring', sub: 'LightGBM · alerts', detail: 'Champion model hot-reloaded from MLflow; alerts graded as confirmed, false alarm or preempted. 98 % precision.' },
+      { id: 'gold', layer: 4, row: 1.6, icon: 'columns', label: 'Gold', sub: 'minute aggregates', detail: '1-minute aggregates per machine, MERGEd as late data arrives.' },
+      { id: 'grafana', layer: 5, row: 0, icon: 'chart', label: 'Grafana', sub: 'live fleet', detail: 'Risk, alerts, caught vs missed failures, throughput and data quality.' },
+      { id: 'api', layer: 5, row: 1, icon: 'code', label: 'FastAPI', sub: 'REST · SSE alerts', detail: 'Fleet state and a live alert stream pushed by Postgres NOTIFY.' },
+      { id: 'alerts', layer: 5, row: 2, icon: 'bell', label: 'Alert topic', sub: 'Kafka', detail: 'Alerts with the closest failure rule in numbers, e.g. overstrain 10,440 of 11,000 min·Nm.' },
+    ],
+    lane: { label: 'MLOps', text: 'Airflow · hourly retrain · MLflow champion/challenger', from: 2, to: 4 },
+    flows: [
+      {
+        id: 'lakehouse',
+        name: 'Medallion lakehouse',
+        summary: 'Kafka into Delta Lake on S3: raw Bronze, contract-valid deduplicated Silver, rejects with reasons, per-minute Gold.',
+        facts: ['0 duplicates in Silver', 'exactly-once into Postgres', '~22 events/s'],
+        edges: ['sim>kafka', 'kafka>bronze', 'bronze>silver', 'bronze>quarantine', 'silver>gold', 'gold>grafana'],
+      },
+      {
+        id: 'scoring',
+        name: 'Live scoring & alerts',
+        summary: 'Every production cycle scored by the champion model; alerts raised before failures and graded against what happened.',
+        facts: ['67–76 % recall', '98 % precision', '8-cycle median warning'],
+        edges: ['sim>kafka', 'kafka>bronze', 'bronze>silver', 'silver>score', 'score>grafana', 'score>api', 'score>alerts'],
+      },
+    ],
+  } satisfies ArchMap,
+};
+
+export const smartFarming = {
+  badge: 'IoT · analytics engineering',
+  name: 'Smart Farming Platform',
+  summary:
+    'Simulated soil probes on eight fields around Agadir report over MQTT; an edge gateway makes the data trustworthy, real weather adds the climate, and dbt turns it into irrigation advice and crop recommendations.',
+  repo: 'https://github.com/Med-Dev-99/smart-farming',
+  map: {
+    id: 'farm',
+    title: 'Smart farming platform architecture',
+    intro: 'Real weather and farm locations, simulated probes. Pick a path, or hover any component.',
+    layers: [
+      { name: 'Field', tone: 'cyan' },
+      { name: 'Edge', tone: 'primary' },
+      { name: 'Raw', tone: 'amber' },
+      { name: 'Transform', tone: 'violet' },
+      { name: 'Serve', tone: 'green' },
+    ],
+    nodes: [
+      { id: 'probes', layer: 0, row: 0.5, icon: 'signal', label: 'Soil probes', sub: '8 fields · MQTT', detail: 'Moisture, temperature, EC, N-P-K and pH, with dropouts, stuck sensors, spikes and broken messages.' },
+      { id: 'meteo', layer: 0, row: 1.8, icon: 'cloud', label: 'Open-Meteo', sub: 'observed + forecast', detail: 'Real hourly weather and FAO-56 ET0 for each farm, including the 7-day forecast.' },
+      { id: 'gateway', layer: 1, row: 0.5, icon: 'merge', label: 'Edge gateway', sub: 'gap filling', detail: 'Contract validation, deduplication, short gaps interpolated, long gaps recorded, spikes flagged, store and forward.' },
+      { id: 'readings', layer: 2, row: 0.5, icon: 'database', label: 'TimescaleDB', sub: 'hypertable · rollups', detail: 'Hypertable compressed after 7 days, hourly continuous aggregate (real-time).' },
+      { id: 'weather', layer: 2, row: 1.8, icon: 'database', label: 'Weather', sub: 'hourly per farm', detail: 'Observed and forecast hours, upserted hourly by Dagster.' },
+      { id: 'dbt', layer: 3, row: 0.8, icon: 'layers', label: 'dbt models', sub: 'staging → marts', detail: '12 models and 30 tests, including agronomic rules; lineage in Dagster and dbt docs.' },
+      { id: 'model', layer: 3, row: 2.1, icon: 'spark', label: 'Crop model', sub: 'random forest', detail: '22 crops, 99.6 % cross-validated accuracy, applied to each field’s measured conditions.' },
+      { id: 'advice', layer: 4, row: 0, icon: 'drop', label: 'Irrigation', sub: 'FAO-56 advice', detail: 'Irrigate when depletion + 48 h of crop use − forecast rain passes the allowed depletion.' },
+      { id: 'recs', layer: 4, row: 1.2, icon: 'chart', label: 'Crop advice', sub: 'top 3 per field', detail: 'Model probabilities next to a profile-fit ranking of every crop.' },
+      { id: 'health', layer: 4, row: 2.4, icon: 'monitor', label: 'Probe health', sub: 'gaps · stuck', detail: 'Offline probes, gaps, imputed share and stuck sensors found as flat-line hours.' },
+    ],
+    lane: { label: 'Dagster', text: 'assets · schedules · dbt tests and live-feed checks', from: 2, to: 4 },
+    flows: [
+      {
+        id: 'irrigation',
+        name: 'Irrigation advice',
+        summary: 'Probe moisture and real weather combined into today’s advice: how many millimetres, which field, and why.',
+        facts: ['FAO-56 water balance', '48 h rain forecast', '30 dbt tests'],
+        edges: ['probes>gateway', 'gateway>readings', 'readings>dbt', 'meteo>weather', 'weather>dbt', 'dbt>advice'],
+      },
+      {
+        id: 'crops',
+        name: 'Crop recommendation',
+        summary: 'Each field’s measured soil and climate scored against 22 crops by a model and by profile fit.',
+        facts: ['99.6 % CV accuracy', 'current crop first on 6/8 fields'],
+        edges: ['readings>dbt', 'weather>dbt', 'dbt>recs', 'model>recs'],
+      },
+      {
+        id: 'health',
+        name: 'Probe health',
+        summary: 'Dropouts, stuck sensors and spikes caught at the edge and in the models, before anyone trusts the data.',
+        facts: ['gaps recorded, not invented', 'stuck sensors detected'],
+        edges: ['probes>gateway', 'gateway>readings', 'readings>dbt', 'dbt>health'],
+      },
+    ],
+  } satisfies ArchMap,
+};
+
 export const moreProjects: { name: string; flow: string[]; note: string; href?: string; internal?: boolean }[] = [
-  {
-    name: 'IoT sensor streaming',
-    flow: ['sensors', 'Kafka', 'MongoDB Atlas', 'Spark', 'Grafana'],
-    note: 'Real-time ingestion and analytics on simulated sensor streams.',
-  },
   {
     name: 'Twitter ETL & analytics',
     flow: ['Twitter API', 'Pentaho PDI', 'PostgreSQL', 'reports'],
@@ -285,12 +387,12 @@ export const moreProjects: { name: string; flow: string[]; note: string; href?: 
 
 /** Grouped like the layers of a data platform. */
 export const toolbox = [
-  { layer: 'Ingest', tools: ['Apache NiFi', 'Kafka', 'n8n', 'REST & carrier APIs', 'Playwright'] },
+  { layer: 'Ingest', tools: ['Apache NiFi', 'Kafka', 'MQTT', 'n8n', 'REST & carrier APIs', 'Playwright'] },
   { layer: 'Process', tools: ['Spark', 'Azure Databricks', 'dbt', 'DuckDB', 'pandas', 'Delta Live Tables'] },
-  { layer: 'Store', tools: ['PostgreSQL', 'PostGIS', 'ADLS Gen2', 'Parquet', 'BigQuery', 'MongoDB'] },
-  { layer: 'Orchestrate', tools: ['Airflow', 'Docker', 'GitHub Actions'] },
+  { layer: 'Store', tools: ['PostgreSQL', 'PostGIS', 'TimescaleDB', 'Delta Lake', 'ADLS Gen2', 'Parquet', 'BigQuery'] },
+  { layer: 'Orchestrate', tools: ['Airflow', 'Dagster', 'Docker', 'GitHub Actions'] },
   { layer: 'Serve', tools: ['FastAPI', 'Node.js · Fastify', 'Superset', 'Grafana'] },
-  { layer: 'AI & ML', tools: ['LLM agents', 'LangGraph', 'OCR', 'scikit-learn', 'PyTorch'] },
+  { layer: 'AI & ML', tools: ['LLM agents', 'LangGraph', 'MLflow', 'LightGBM', 'scikit-learn', 'PyTorch', 'OCR'] },
   { layer: 'Languages', tools: ['Python', 'SQL', 'TypeScript', 'Go'] },
 ];
 
