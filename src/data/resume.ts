@@ -8,18 +8,19 @@ export const contact = {
   website: 'mohamedelkorchi.com',
   linkedin: 'linkedin.com/in/mohamedelkorchi',
   github: 'github.com/Med-Dev-99',
+  mobility: 'Open to remote or relocation',
 };
 
 /** The line under the name: the job title ATS and recruiters read first. */
 export const headline = 'Data Engineer | Real-time Pipelines, Lakehouse & Applied AI';
 
 export const summary =
-  'Data Engineer with 3+ years turning messy, real-world data into reliable production platforms. I start from the problem, design the simplest system that solves it, and ship it end to end: ingestion, data quality, modeling, orchestration and applied AI, with Python, SQL, Spark, Kafka, Airflow and dbt. Ambitious to build data platforms people trust and act on.';
+  'Data Engineer with 3+ years turning messy, real-world data into reliable production platforms. Starts from the problem, designs the simplest system that solves it and ships it end to end: ingestion, data quality, modeling, orchestration and applied AI with Python, SQL, Spark, Kafka, Airflow and dbt. Aiming to build larger data platforms people trust and act on.';
 
 export const projects = [
   {
     name: 'FIREBRIDGE: NASA Space Apps Challenge 2026',
-    role: 'Data platform & AI agent, team of 4',
+    role: 'Data platform & AI agent, team of 4; data analyzed before the event, platform built during the hackathon',
     link: 'ogote.com',
     stack: 'Airflow 3, dbt, Parquet, DuckDB, PostgreSQL/PostGIS, FastAPI, Fastify, React, Docker, GitHub Actions',
     points: [
@@ -36,7 +37,7 @@ export const projects = [
     stack: 'Kafka, Spark Structured Streaming (PySpark), Delta Lake, S3, MLflow, LightGBM, Airflow 3, PostgreSQL, FastAPI, Grafana, Docker, GitHub Actions',
     points: [
       'Built a streaming lakehouse: telemetry from a simulated 20-machine fleet flows through Kafka and Spark Structured Streaming into Delta Lake (bronze/silver/gold) with a data contract, quarantine, watermark deduplication and exactly-once writes to PostgreSQL.',
-      'Scored every production cycle with a LightGBM model served from the MLflow registry: alerts come a median of 8 cycles before failure and catch 67-76% of predictable failures at 98% precision.',
+      'Scored every production cycle with a LightGBM model served from the MLflow registry: alerts come a median of 8 cycles before failure and catch 67-76% of predictable failures (across three promoted model versions) at 98% precision.',
       'Automated retraining with Airflow (hourly champion/challenger, promoted only when PR-AUC improves) and data-quality checks every 15 minutes; CI runs Spark tests and a full-stack end-to-end check.',
     ],
   },
@@ -48,35 +49,31 @@ export const projects = [
     points: [
       'Built an MQTT edge gateway for soil probes on 8 fields (simulated sensors, real farm locations): contract validation, deduplication, gap filling and spike flags.',
       'Modeled the data in TimescaleDB (hypertable, continuous aggregate) and 12 dbt models with 30 tests, joining real Open-Meteo weather into FAO-56 irrigation advice, crop suitability and sensor health; orchestrated with Dagster.',
-      'Trained a random-forest crop recommender (22 crops, 99.6% cross-validated accuracy) applied to each field\'s measured soil and climate.',
-    ],
-  },
-  {
-    name: 'Docker Inspector: open-source container monitoring tool',
-    role: 'Sole author',
-    link: 'github.com/Med-Dev-99/Docker-inspector',
-    stack: 'Electron, React, TypeScript, Node.js, SQLite, WebSocket, Docker Engine API',
-    points: [
-      'Built a desktop app that records container metrics and events to SQLite, diagnoses crashes with evidence (last logs, pre-crash metrics) and audits configurations for exposed ports, secrets in environment variables and missing limits.',
+      'Added a random-forest crop recommender, applied to each field\'s measured soil and climate.',
     ],
   },
 ];
 
 /** Only skills the experience or projects above show in use. */
 export const resumeSkills = [
-  { group: 'Programming', items: 'Python, SQL, TypeScript, Java, Go' },
+  { group: 'Programming', items: 'Python, SQL, TypeScript, Go' },
   { group: 'Data engineering', items: 'Apache Spark (PySpark, Structured Streaming), Apache Kafka, Apache NiFi, Apache Airflow, Dagster, dbt, Delta Lake, Delta Live Tables, DuckDB, Parquet, pandas' },
   { group: 'Data practices', items: 'ETL/ELT, batch and streaming pipelines, data modeling, data warehousing, lakehouse (medallion architecture), data quality, data contracts, geospatial and IoT sensor data (MQTT, GPS, AIS)' },
   { group: 'Cloud', items: 'Azure (Databricks, ADLS Gen2), AWS (S3, Lambda), GCP (BigQuery, GCS, Cloud Functions)' },
-  { group: 'Databases', items: 'PostgreSQL, PostGIS, TimescaleDB, MongoDB, Cassandra, Redis, SQLite' },
-  { group: 'ML & AI', items: 'scikit-learn, LightGBM, PyTorch, MLflow, LLM agents, LangChain/LangGraph, Hugging Face, NLP, OCR and document AI' },
+  { group: 'Databases', items: 'PostgreSQL, PostGIS, TimescaleDB, Redis, SQLite' },
+  { group: 'ML & AI', items: 'scikit-learn, LightGBM, PyTorch, MLflow, LLM agents, Hugging Face, NLP, OCR and document AI' },
   { group: 'DevOps & BI', items: 'Docker, GitHub Actions (CI/CD), Git, Linux, FastAPI, REST APIs, n8n, Apache Superset, Grafana' },
 ];
 
-/** Certifications as the resume lists them: the three DeepLearning.AI courses share one line. */
+/**
+ * Certifications as the resume lists them. The NASA Space Apps "Galactic Problem Solver"
+ * certificate goes to every team that submits a project, so it is not listed as an award;
+ * the FIREBRIDGE project already shows the participation.
+ */
 export const resumeCredentials = [
-  { name: 'NASA Space Apps Challenge 2026: Galactic Problem Solver', issuer: 'NASA, Nov 2026' },
-  { name: 'Machine Learning, Deep Learning and Natural Language Processing Specializations', issuer: 'DeepLearning.AI (Machine Learning with Stanford Online)' },
+  { name: 'Machine Learning Specialization', issuer: 'DeepLearning.AI & Stanford Online' },
+  { name: 'Deep Learning Specialization', issuer: 'DeepLearning.AI' },
+  { name: 'Natural Language Processing Specialization', issuer: 'DeepLearning.AI' },
 ];
 
 export const spokenLanguages = 'Arabic (native), French (professional working proficiency), English (professional working proficiency)';
