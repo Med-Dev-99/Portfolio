@@ -11,7 +11,7 @@ export const contact = {
 };
 
 export const summary =
-  'Data Engineer with 3+ years building scalable data platforms, ELT pipelines and real-time systems in production with Apache NiFi, Azure Databricks (Spark), ADLS Gen2, Airflow, dbt, FastAPI and PostgreSQL/PostGIS. Built Freshtrack’s real-time container tracking and schedules platform over 24 shipping carriers. Recently built the data platform and grounded AI agent of FIREBRIDGE for the NASA Space Apps Challenge 2026: 666.9M satellite records acquired, audited and served through versioned releases. Strong foundation in machine learning, NLP and LLM agents.';
+  'AI & Data Engineer with 3+ years building real-time data platforms in production. At Freshtrack I own data and AI for a sea, road and air logistics platform: carrier APIs, AIS feeds, truck IoT sensors and partner emails flow through Apache NiFi, n8n and Python pipelines into one validated event model that drives track & trace, cold-chain and demurrage risk alerts, ETA models, document AI and carrier analytics. Recently built the data platform and grounded AI agent of FIREBRIDGE for the NASA Space Apps Challenge 2026 (666.9M satellite records). Strong foundation in machine learning, NLP and LLM agents.';
 
 export const projects = [
   {
@@ -49,10 +49,11 @@ export const projects = [
 ];
 
 export const resumeSkills = [
-  { group: 'Data engineering', items: 'Apache Spark, Kafka, NiFi, Airflow, dbt, Delta Live Tables, Parquet/Arrow, DuckDB, ELT, streaming' },
+  { group: 'Data engineering', items: 'Apache NiFi, Spark, Kafka, Airflow, dbt, Delta Live Tables, Parquet/Arrow, DuckDB, ELT, streaming, event modelling (DCSA)' },
+  { group: 'Geo & IoT data', items: 'PostGIS, GeoJSON geofencing, AIS vessel data, GPS / temperature / light sensor streams' },
   { group: 'Cloud', items: 'Azure Databricks, ADLS Gen2, BigQuery, AWS S3 & Lambda, Google Cloud Storage & Functions' },
   { group: 'Databases', items: 'PostgreSQL, PostGIS, MongoDB, Cassandra, SQLite, Redis' },
-  { group: 'AI / ML', items: 'PyTorch, TensorFlow, scikit-learn, HuggingFace, LangChain/LangGraph, LLM agents, OCR, NLP' },
-  { group: 'Backend & DevOps', items: 'FastAPI, Flask, Node.js/Fastify, Docker, GitHub Actions, Linux, n8n, REST APIs' },
+  { group: 'AI / ML', items: 'LLM agents, OCR & document AI, ETA modelling, anomaly detection, PyTorch, scikit-learn, HuggingFace, LangChain/LangGraph, NLP' },
+  { group: 'Automation & DevOps', items: 'n8n, FastAPI, Flask, Node.js/Fastify, Docker, GitHub Actions, Linux, REST APIs, Superset' },
   { group: 'Languages', items: 'Python, SQL, TypeScript, Java, Go, C/C#, Dart' },
 ];
