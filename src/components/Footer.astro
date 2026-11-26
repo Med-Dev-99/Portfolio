@@ -16,6 +16,7 @@ const built = new Date().toISOString().slice(0, 10);
       <div class="text-sm">
         <p class="m-0 font-medium">{site.name}</p>
         <p class="m-0 font-mono text-[11.5px] text-muted">build {built} · {commit} · Astro + Tailwind on a self-managed VPS</p>
+        {site.gaId && <button type="button" data-consent-open class="mt-1 p-0 font-mono text-[11.5px] text-muted underline decoration-line-strong underline-offset-2 hover:text-fg">Cookie settings</button>}
       </div>
     </div>
     <ul class="m-0 flex list-none items-center gap-2 p-0">
