@@ -41,7 +41,8 @@ scp -q -o BatchMode=yes deploy/server/portfolio-gateway deploy/server/compose.ya
 echo "▸ installing on $HOST"
 ssh -o BatchMode=yes "$HOST" bash -s -- "$STAGE" "$PROXY" <<'REMOTE'
 set -euo pipefail
-STAGE="$1"; PROXY="$2"
+# ssh joins arguments into one command line, so an empty PROXY arrives as no argument at all.
+STAGE="$1"; PROXY="${2:-}"
 
 python3 -m py_compile "$STAGE/portfolio-gateway"
 install -o root -g root -m 0755 "$STAGE/portfolio-gateway" /usr/local/sbin/portfolio-gateway
