@@ -6,9 +6,34 @@ import SqlKicker from '../components/SqlKicker.astro';
 import HeroStream from '../components/HeroStream.astro';
 import ArchMap from '../components/ArchMap.astro';
 import {
-  site, freshtrack, firebridge, moreProjects, toolbox,
+  site, freshtrack, firebridge, predictiveMaintenance, smartFarming, moreProjects, toolbox,
   experience, earlier, about, education, credentials,
 } from '../data/profile';
+
+type Action = { label: string; href: string; icon: 'arrow-right' | 'arrow-up-right' | 'github'; primary?: boolean; external?: boolean };
+const platforms = [
+  {
+    id: 'predictive-maintenance', tab: 'Predictive maintenance', short: 'Maintenance', status: 'open source', live: false,
+    ...predictiveMaintenance,
+    actions: [{ label: 'Code & results', href: predictiveMaintenance.repo, icon: 'github', primary: true, external: true }] as Action[],
+    repos: [],
+  },
+  {
+    id: 'firebridge', tab: 'FIREBRIDGE', short: 'FIREBRIDGE', status: 'live', live: true,
+    ...firebridge,
+    actions: [
+      { label: 'Case study', href: firebridge.links.caseStudy, icon: 'arrow-right', primary: true },
+      { label: 'Live app', href: firebridge.links.live, icon: 'arrow-up-right', external: true },
+    ] as Action[],
+    repos: firebridge.links.repos,
+  },
+  {
+    id: 'smart-farming', tab: 'Smart farming', short: 'Farming', status: 'open source', live: false,
+    ...smartFarming,
+    actions: [{ label: 'Code & results', href: smartFarming.repo, icon: 'github', primary: true, external: true }] as Action[],
+    repos: [],
+  },
+];
 ---
 
 <Base>
@@ -19,7 +44,7 @@ import {
   <section id="work" class="section border-t border-line">
     <div class="wrap">
       <header class="mb-10 grid max-w-3xl gap-3" data-reveal>
-        <SqlKicker q="SELECT * FROM architectures WHERE env = 'production';" />
+        <SqlKicker q="SELECT name, layers, flows FROM architectures;" />
         <h2 class="section-title">Architectures I’ve built</h2>
         <p class="m-0 text-lg text-fg-2">Each project drawn as the data platform it is: where the data comes from, how it is made trustworthy, and who uses it.</p>
       </header>
@@ -42,29 +67,48 @@ import {
         </div>
       </article>
 
-      <!-- FIREBRIDGE -->
-      <article class="card mt-6 p-5 sm:p-8 lg:p-10" data-reveal>
-        <div class="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
-          <div class="max-w-3xl">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="rounded-md border border-primary/30 bg-primary/8 px-2 py-1 font-mono text-[11.5px] text-primary">{firebridge.badge}</span>
-              <span class="inline-flex items-center gap-1.5 rounded-md border border-green/30 bg-green/8 px-2 py-1 font-mono text-[11.5px] text-green"><span class="size-1.5 rounded-full bg-green"></span>live</span>
+      <!-- Platforms: one card, one tab per project -->
+      <article class="card mt-6 p-5 sm:p-8 lg:p-10" data-reveal data-tabs>
+        <div class="pt-tabs" role="tablist" aria-label="Platforms">
+          {platforms.map((p, i) => (
+            <button type="button" role="tab" id={`tab-${p.id}`} aria-controls={p.id} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} class="pt-tab">
+              <span class="sm:hidden">{p.short}</span><span class="hidden sm:inline">{p.tab}</span>
+            </button>
+          ))}
+        </div>
+
+        {platforms.map((p, i) => (
+          <section id={p.id} role="tabpanel" aria-labelledby={`tab-${p.id}`} class:list={['pt-panel', i === 0 && 'is-active']}>
+            <div class="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
+              <div class="max-w-3xl">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="rounded-md border border-primary/30 bg-primary/8 px-2 py-1 font-mono text-[11.5px] text-primary">{p.badge}</span>
+                  {p.live
+                    ? <span class="inline-flex items-center gap-1.5 rounded-md border border-green/30 bg-green/8 px-2 py-1 font-mono text-[11.5px] text-green"><span class="size-1.5 rounded-full bg-green"></span>{p.status}</span>
+                    : <span class="inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[11.5px] text-fg-2"><Icon name="github" class="size-3.5" />{p.status}</span>}
+                </div>
+                <h3 class="mt-4 text-[clamp(24px,3vw,34px)] tracking-[-.04em]">{p.name}</h3>
+                <p class="m-0 mt-2 text-[16px] leading-relaxed text-fg-2">{p.summary}</p>
+              </div>
+              <div class="flex shrink-0 flex-wrap gap-2.5">
+                {p.actions.map((a) => (
+                  <a href={a.href} class:list={['btn btn-sm', a.primary && 'btn-primary']} {...(a.external ? { target: '_blank', rel: 'noopener' } : {})}>
+                    {a.icon === 'github' && <Icon name="github" />}{a.label}{a.icon !== 'github' && <Icon name={a.icon} />}
+                  </a>
+                ))}
+              </div>
             </div>
-            <h3 class="mt-4 text-[clamp(24px,3vw,34px)] tracking-[-.04em]">{firebridge.name}</h3>
-            <p class="m-0 mt-2 text-[16px] leading-relaxed text-fg-2">{firebridge.summary}</p>
-          </div>
-          <div class="flex shrink-0 flex-wrap gap-2.5">
-            <a href={firebridge.links.caseStudy} class="btn btn-primary btn-sm">Case study <Icon name="arrow-right" /></a>
-            <a href={firebridge.links.live} target="_blank" rel="noopener" class="btn btn-sm">Live app <Icon name="arrow-up-right" /></a>
-          </div>
-        </div>
-        <div class="mt-7 border-t border-line pt-6">
-          <ArchMap map={firebridge.map} />
-        </div>
-        <p class="m-0 mt-6 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[14px]">
-          <span class="label">code</span>
-          {firebridge.links.repos.map((r) => <a href={r.href} target="_blank" rel="noopener" class="link"><Icon name="github" class="size-4" /> {r.label}</a>)}
-        </p>
+            <div class="mt-7 border-t border-line pt-6">
+              <ArchMap map={p.map} />
+            </div>
+            {p.repos.length > 0 && (
+              <p class="m-0 mt-6 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[14px]">
+                <span class="label">code</span>
+                {p.repos.map((r) => <a href={r.href} target="_blank" rel="noopener" class="link"><Icon name="github" class="size-4" /> {r.label}</a>)}
+              </p>
+            )}
+          </section>
+        ))}
       </article>
 
       <!-- More pipelines -->
@@ -242,3 +286,56 @@ import {
     </div>
   </section>
 </Base>
+
+<style>
+  .pt-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px; }
+  .pt-tab { flex: none; border: 1px solid var(--line); background: var(--surface-2); color: var(--text-2); border-radius: 10px; padding: 8px 14px; font-size: 14.5px; font-weight: 500; line-height: 1.2; white-space: nowrap; transition: color .2s, background-color .2s, border-color .2s; }
+  .pt-tab:hover { color: var(--text); }
+  @media (max-width: 639.98px) { .pt-tab { padding: 8px 11px; font-size: 14px; } }
+  .pt-tab[aria-selected='true'] { border-color: color-mix(in srgb, var(--primary) 55%, var(--line)); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); color: var(--text); }
+  .pt-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  /* Deep links (/#smart-farming) land with the tab bar still in view. */
+  .pt-panel { scroll-margin-top: 120px; }
+  /* Without JS every panel is shown, one after another. */
+  :global(html:not(.js)) .pt-tabs { display: none; }
+  :global(html:not(.js)) .pt-panel + .pt-panel { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 40px; }
+  :global(.js) .pt-panel:not(.is-active) { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .pt-panel.is-active { animation: pt-in .35s var(--ease-soft) both; }
+  }
+  @keyframes pt-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+</style>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-tabs]')) {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const select = (tab: HTMLButtonElement, focus = false) => {
+      for (const t of tabs) {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute('aria-controls')!)?.classList.toggle('is-active', on);
+      }
+      if (focus) tab.focus();
+    };
+    root.addEventListener('click', (e) => {
+      const tab = (e.target as Element).closest<HTMLButtonElement>('[role="tab"]');
+      if (tab) select(tab);
+    });
+    root.addEventListener('keydown', (e) => {
+      const i = tabs.indexOf(document.activeElement as HTMLButtonElement);
+      if (i < 0) return;
+      const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (next === undefined) return;
+      e.preventDefault();
+      select(tabs[(next + tabs.length) % tabs.length], true);
+    });
+    // Deep links such as /#smart-farming open that platform.
+    const fromHash = () => {
+      const tab = tabs.find((t) => `#${t.getAttribute('aria-controls')}` === location.hash);
+      if (tab) { select(tab); document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' }); }
+    };
+    fromHash();
+    addEventListener('hashchange', fromHash);
+  }
+</script>
