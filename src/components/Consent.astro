@@ -1,0 +1,94 @@
+---
+/**
+ * Consent banner for Google Analytics 4. Nothing is sent to Google until the visitor accepts;
+ * the choice is kept in localStorage and can be changed from the footer ("Cookie settings").
+ * Rendered only when site.gaId is set.
+ */
+import { site } from '../data/profile';
+---
+
+<div class="consent" data-consent data-ga={site.gaId} role="dialog" aria-live="polite" aria-label="Analytics consent" hidden>
+  <p class="m-0 text-[14px] leading-snug text-fg-2">
+    I use Google Analytics to see how visitors use this site. Is it OK to set analytics cookies?
+  </p>
+  <div class="flex shrink-0 gap-2">
+    <button type="button" class="btn btn-sm" data-consent-choice="denied">Decline</button>
+    <button type="button" class="btn btn-primary btn-sm" data-consent-choice="granted">Accept</button>
+  </div>
+</div>
+
+<style>
+  .consent {
+    position: fixed; z-index: 60; left: 16px; right: 16px; bottom: 16px; margin-inline: auto; max-width: 640px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px;
+    padding: 14px 16px; border: 1px solid var(--line-strong); border-radius: 14px;
+    background: var(--surface); box-shadow: var(--shadow);
+  }
+  .consent[hidden] { display: none; }
+</style>
+
+<script>
+  type Choice = 'granted' | 'denied';
+  const KEY = 'analytics-consent';
+  const root = document.querySelector<HTMLElement>('[data-consent]');
+  const id = root?.dataset.ga;
+
+  const read = (): Choice | null => {
+    try { const v = localStorage.getItem(KEY); return v === 'granted' || v === 'denied' ? v : null; } catch { return null; }
+  };
+  const save = (v: Choice) => { try { localStorage.setItem(KEY, v); } catch { /* private mode: ask again next visit */ } };
+
+  const w = window as unknown as { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
+  const load = () => {
+    if (!id || w.gtag) return;
+    w.dataLayer = w.dataLayer || [];
+    // gtag must push the arguments object itself, not an array.
+    w.gtag = function () { w.dataLayer!.push(arguments); };
+    w.gtag('js', new Date());
+    w.gtag('config', id);
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
+    document.head.append(s);
+  };
+
+  // Remove GA cookies (_ga, _ga_<stream>) on this host and the parent domain.
+  const clearCookies = () => {
+    const host = location.hostname;
+    for (const c of document.cookie.split(';')) {
+      const name = c.split('=')[0].trim();
+      if (!name.startsWith('_ga')) continue;
+      for (const domain of ['', host, `.${host.replace(/^www\./, '')}`]) {
+        document.cookie = `${name}=; Max-Age=0; path=/${domain ? `; domain=${domain}` : ''}`;
+      }
+    }
+  };
+
+  if (root && id) {
+    const choice = read();
+    if (choice === 'granted') load();
+    else if (choice === null) root.hidden = false;
+
+    root.addEventListener('click', (e) => {
+      const btn = (e.target as Element).closest<HTMLElement>('[data-consent-choice]');
+      if (!btn) return;
+      const v = btn.dataset.consentChoice as Choice;
+      const was = read();
+      save(v);
+      root.hidden = true;
+      if (v === 'granted') load();
+      else if (was === 'granted') {
+        // Switch the running tag off first (Google's documented opt-out flag), or it rewrites
+        // its session cookie before the page unloads; then delete the cookies and reload.
+        (window as unknown as Record<string, unknown>)[`ga-disable-${id}`] = true;
+        w.gtag?.('consent', 'update', { analytics_storage: 'denied' });
+        clearCookies();
+        location.reload();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if ((e.target as Element).closest('[data-consent-open]')) root.hidden = false;
+    });
+  }
+</script>
