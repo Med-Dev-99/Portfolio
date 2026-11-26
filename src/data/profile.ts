@@ -12,6 +12,8 @@ export const site = {
   linkedin: 'https://www.linkedin.com/in/mohamedelkorchi',
   github: 'https://github.com/Med-Dev-99',
   resume: '/resume/Mohamed-El-Korchi-Resume.pdf',
+  /** Google Analytics 4 measurement ID (G-XXXXXXXXXX). Empty = no analytics and no consent banner. */
+  gaId: '',
   title: 'Mohamed El Korchi, AI & Data Engineer',
   description:
     'AI & Data Engineer designing data platforms end to end: real-time pipelines, data quality, lakehouse ELT and grounded LLM agents. Apache NiFi, Spark/Databricks, Airflow, dbt, PostgreSQL/PostGIS.',
