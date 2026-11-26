@@ -24,6 +24,7 @@ Scripts, all small and framework-free:
 - `HeroStream.astro`: the hero canvas, where raw records pass a validation gate and assemble the name.
 - `ArchMap.astro` (≈2 KB of script): each project drawn as a layered architecture diagram (sources → ingest → process → store → serve). Pick a flow to light up its data path, hover a component to see what it does and every flow that uses it; while on screen it steps through the flows by itself. Phones get the selected flow as a vertical pipeline; without JavaScript the full diagram and every caption are shown.
 - `Header.astro` (<1 KB): section links show pipeline-run states (pending → running → done) as you scroll.
+- `index.astro` platform tabs (<1 KB): several projects share one card, one tab and one architecture map each. Tabs follow the ARIA tabs pattern (arrow keys, Home/End) and are deep-linkable (`/#predictive-maintenance`, `/#firebridge`, `/#smart-farming`); without JavaScript every platform is shown in sequence.
 
 ## Develop
 
