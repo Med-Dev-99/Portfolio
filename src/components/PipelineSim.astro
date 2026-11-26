@@ -1,8 +1,8 @@
 ---
 /**
- * Hero visual: a live simulation of a data pipeline.
- * Records flow from sources → ingest → validate (bad records to quarantine) → store → transform → serve
- * → consumers (dashboards, APIs, AI agent). Two layouts: wide (desktop) and tall (mobile).
+ * A live simulation of the Freshtrack data flow.
+ * Signals flow from sources → ingest → validate (bad records to quarantine) → unify → enrich → serve
+ * → consumers (risk alerts, dashboards, AI insights). Two layouts: wide (desktop) and tall (mobile).
  * The SVG is complete without JavaScript (static diagram + a few parked records); the script animates it.
  */
 
@@ -13,34 +13,34 @@ type Edge = { id: string; from: string; to: string; p: [Pt, Pt, Pt, Pt] };
 type Layout = { name: 'wide' | 'tall'; w: number; h: number; boxes: Box[]; sources: Port[]; outputs: Port[]; edges: Edge[]; fs: { stage: number; tools: number; port: number } };
 
 const glyphs = {
-  satellite: '<path d="M1 6.5h4v3H1zM11 6.5h4v3h-4zM6 5.5h4v5H6zM8 5.5V3M6.5 2.5h3"/>',
   ship: '<path d="M2 10h12l-2 3.5H4zM4.5 6.5h3v3.5h-3zM8.5 6.5h3v3.5h-3z"/>',
   pin: '<path d="M8 14.5s4.5-4.2 4.5-7.8a4.5 4.5 0 1 0-9 0C3.5 10.3 8 14.5 8 14.5z"/><circle cx="8" cy="6.6" r="1.6"/>',
   signal: '<circle cx="8" cy="9.2" r="1.3"/><path d="M5.3 6.5a3.8 3.8 0 0 1 5.4 0M3.2 4.4a6.8 6.8 0 0 1 9.6 0M8 10.5v3.5"/>',
-  doc: '<path d="M4 1.5h5.5l3 3v10H4zM9.5 1.5v3h3M6 8.5h4.5M6 11h4.5"/>',
+  mail: '<rect x="1.5" y="3.5" width="13" height="9" rx="1.5"/><path d="m2 4.5 6 4.5 6-4.5"/>',
+  globe: '<circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c2 2.2 2 10.2 0 12.4M8 1.8c-2 2.2-2 10.2 0 12.4"/>',
+  bell: '<path d="M4 11.5V7.2a4 4 0 0 1 8 0v4.3l1.2 1.3H2.8z"/><path d="M6.6 14.3a1.6 1.6 0 0 0 2.8 0"/>',
   bars: '<path d="M3 13.5V9.5M6.5 13.5V5M10 13.5V7.5M13.5 13.5V3"/>',
-  code: '<path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/>',
   spark: '<path d="M8 1.8l1.6 4.6 4.6 1.6-4.6 1.6L8 14.2l-1.6-4.6L1.8 8l4.6-1.6z"/>',
 };
 
 const STAGES = [
-  { id: 'ingest', stage: 'Ingest', tools: 'NiFi · Kafka' },
-  { id: 'validate', stage: 'Validate', tools: 'schema · tests' },
-  { id: 'store', stage: 'Store', tools: 'Parquet · ADLS' },
-  { id: 'transform', stage: 'Transform', tools: 'Spark · dbt' },
+  { id: 'ingest', stage: 'Ingest', tools: 'NiFi · n8n' },
+  { id: 'validate', stage: 'Validate', tools: 'guards · dedup' },
+  { id: 'store', stage: 'Unify', tools: 'DCSA events' },
+  { id: 'transform', stage: 'Enrich', tools: 'zones · ETA' },
   { id: 'serve', stage: 'Serve', tools: 'PostgreSQL' },
 ];
 const SOURCES = [
-  { label: 'satellites', short: 'satellites', glyph: 'satellite', tone: 't-cyan' },
   { label: 'carrier APIs', short: 'carriers', glyph: 'ship', tone: 't-amber' },
-  { label: 'GPS trackers', short: 'GPS', glyph: 'pin', tone: 't-green' },
-  { label: 'IoT sensors', short: 'sensors', glyph: 'signal', tone: 't-magenta' },
-  { label: 'documents', short: 'documents', glyph: 'doc', tone: 't-gray' },
+  { label: 'AIS feeds', short: 'AIS', glyph: 'signal', tone: 't-cyan' },
+  { label: 'IoT trackers', short: 'IoT', glyph: 'pin', tone: 't-green' },
+  { label: 'emails · docs', short: 'emails', glyph: 'mail', tone: 't-magenta' },
+  { label: 'carrier sites', short: 'websites', glyph: 'globe', tone: 't-gray' },
 ] as const;
 const OUTPUTS = [
+  { label: 'risk alerts', glyph: 'bell', tone: 't-primary' },
   { label: 'dashboards', glyph: 'bars', tone: 't-primary' },
-  { label: 'APIs', glyph: 'code', tone: 't-primary' },
-  { label: 'AI agent', glyph: 'spark', tone: 't-violet' },
+  { label: 'AI insights', glyph: 'spark', tone: 't-violet' },
 ] as const;
 
 const line = (a: Pt, b: Pt): [Pt, Pt, Pt, Pt] => [a, [a[0] + (b[0] - a[0]) / 3, a[1] + (b[1] - a[1]) / 3], [a[0] + (2 * (b[0] - a[0])) / 3, a[1] + (2 * (b[1] - a[1])) / 3], b];
@@ -131,7 +131,7 @@ const parked = (l: Layout) =>
         viewBox={`0 0 ${l.w} ${l.h}`}
         data-layout={l.name}
         role="img"
-        aria-label="Data pipeline: satellites, carrier APIs, GPS trackers, IoT sensors and documents are ingested, validated (failing records go to quarantine), stored as Parquet, transformed with Spark and dbt, served from PostgreSQL, and consumed by dashboards, APIs and an AI agent."
+        aria-label="Freshtrack data flow: carrier APIs, AIS feeds, IoT trackers, emails and documents, and carrier websites are ingested with NiFi and n8n, validated (records that fail a guard go to quarantine), unified into one event model, enriched with zones and ETAs, served from PostgreSQL, and turned into risk alerts, dashboards and AI insights."
       >
         <g class="edges">
           {l.edges.map((e) => <path id={`${l.name}-${e.id}`} data-edge={e.id} d={d(e.p)} class:list={['edge', e.to === 'quarantine' && 'edge-bad']} />)}
@@ -174,7 +174,7 @@ const parked = (l: Layout) =>
     <span class="flex items-center gap-1.5"><span class="inline-block size-2 rounded-full bg-cyan"></span>raw record</span>
     <span class="flex items-center gap-1.5"><span class="inline-block size-2 rounded-[2px] bg-primary"></span>modelled row</span>
     <span class="flex items-center gap-1.5"><span class="inline-block size-2 rounded-full bg-red"></span>failed a check → quarantine</span>
-    <span class="ml-auto hidden md:inline">A simulation of the pipelines I build</span>
+    <span class="ml-auto hidden md:inline">A simulation of how signals flow through Freshtrack</span>
   </figcaption>
 </figure>
 
