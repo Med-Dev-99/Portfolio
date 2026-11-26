@@ -10,58 +10,73 @@ export const contact = {
   github: 'github.com/Med-Dev-99',
 };
 
+/** The line under the name: the job title ATS and recruiters read first. */
+export const headline = 'Data Engineer | Real-time Pipelines, Lakehouse & Applied AI';
+
 export const summary =
-  'AI & Data Engineer with 3+ years building real-time data platforms in production. At Freshtrack I own data and AI for a sea, road and air logistics platform: carrier APIs, AIS feeds, truck IoT sensors and partner emails flow through Apache NiFi, n8n and Python pipelines into one validated event model that drives track & trace, cold-chain and demurrage risk alerts, ETA models, document AI and carrier analytics. Recently built the data platform and grounded AI agent of FIREBRIDGE for the NASA Space Apps Challenge 2026 (666.9M satellite records), and open-source streaming lakehouse, MLOps and IoT analytics platforms. Strong foundation in machine learning, NLP and LLM agents.';
+  'Data Engineer with 3+ years designing and running batch and real-time data pipelines in production, with applied AI on top. At Freshtrack I own the data platform of a sea, road and air freight product: Apache NiFi and Python ingestion from carrier APIs, AIS and IoT sensors into a validated PostgreSQL/PostGIS event model, with analytics on Azure Databricks. Built the FIREBRIDGE data platform and AI agent (NASA Space Apps 2026, 666.9M records) and open-source lakehouse and IoT platforms with Kafka, Spark, Delta Lake, Airflow, dbt and MLflow.';
 
 export const projects = [
   {
     name: 'FIREBRIDGE: NASA Space Apps Challenge 2026',
-    meta: 'Data platform & AI agent · team of 4 · ogote.com',
-    stack: 'Airflow 3 · dbt · Parquet · DuckDB · PostgreSQL/PostGIS · FastAPI · Fastify · React · Docker · GitHub Actions',
+    role: 'Data platform & AI agent, team of 4',
+    link: 'ogote.com',
+    stack: 'Airflow 3, dbt, Parquet, DuckDB, PostgreSQL/PostGIS, FastAPI, Fastify, React, Docker, GitHub Actions',
     points: [
-      'Built resumable acquisition and audit of NASA FIRMS fire records for 5 satellites (MODIS, VIIRS) and Landsat: 666.9M rows in a 23.3 GiB Parquet lake, 4,202 download windows audited, orchestrated by 10 Airflow DAGs.',
+      'Built resumable acquisition and auditing of NASA FIRMS fire records from 5 MODIS/VIIRS satellites and Landsat: 666.9M rows in a 23.3 GiB Parquet lake, 4,202 download windows audited, orchestrated by 10 Airflow DAGs.',
       'Published immutable, versioned releases to PostgreSQL/PostGIS with dbt models and data tests; regional spatial indexes cut analysis time-to-ready from 25.5 s to 4.7 s.',
-      'Built a grounded AI agent (FastAPI, Groq LLMs): evidence engine and number guard that verify every figure, rate-limit-aware fallback across 4 models, short/long-term memory, prompt-injection screening in 7 languages; 138 tests.',
-      'Main contributor to the React/MapLibre web app and Fastify/BullMQ API; CI/CD on GitHub Actions (tests, secret and image scans, GHCR) deploying hardened Docker Compose stacks.',
+      'Built a grounded AI agent (FastAPI, Groq LLMs) whose evidence engine and number guard verify every figure, with fallback across 4 models, memory and prompt-injection screening in 7 languages; 138 tests.',
+      'Built most of the React/MapLibre web app and the Fastify/BullMQ API; set up CI/CD on GitHub Actions (tests, secret and image scans, GHCR) deploying hardened Docker Compose stacks.',
     ],
   },
   {
     name: 'Predictive Maintenance: real-time streaming & MLOps platform',
-    meta: 'Sole author · github.com/Med-Dev-99/Predictive_maintenance',
-    stack: 'Kafka (KRaft) · Spark Structured Streaming · Delta Lake on S3 · MLflow · LightGBM · Airflow 3 · PostgreSQL · FastAPI · Grafana · Docker · GitHub Actions',
+    role: 'Sole author',
+    link: 'github.com/Med-Dev-99/Predictive_maintenance',
+    stack: 'Kafka, Spark Structured Streaming (PySpark), Delta Lake, S3, MLflow, LightGBM, Airflow 3, PostgreSQL, FastAPI, Grafana, Docker, GitHub Actions',
     points: [
-      'Streams telemetry from a simulated 20-machine fleet (AI4I 2020 failure physics) through Kafka into a Delta Lake medallion lakehouse: data contract with a quarantine that keeps every rejection reason, watermark deduplication (0 duplicates in Silver), late-data MERGE, and exactly-once writes into PostgreSQL through a transactional batch ledger.',
-      'Scores every production cycle with a LightGBM champion hot-reloaded from the MLflow registry and alerts before failures, naming the failure rule in numbers: 67–76 % recall on predictable failures at 98 % precision, with a median of 8 cycles’ warning; every alert is graded automatically as confirmed, false alarm or preempted.',
-      'Airflow retrains hourly on SQL-labelled Silver data and promotes a challenger only when its PR-AUC improves (v2 → v5 promoted, v6–v7 kept as challengers); a 15-minute data-quality DAG caught a real outage. CI runs Spark tests and a full-stack end-to-end check.',
+      'Built a streaming lakehouse: telemetry from a simulated 20-machine fleet flows through Kafka and Spark Structured Streaming into Delta Lake (bronze/silver/gold) with a data contract, quarantine, watermark deduplication and exactly-once writes to PostgreSQL.',
+      'Scored every production cycle with a LightGBM model served from the MLflow registry: alerts come a median of 8 cycles before failure and catch 67-76% of predictable failures at 98% precision.',
+      'Automated retraining with Airflow (hourly champion/challenger, promoted only when PR-AUC improves) and data-quality checks every 15 minutes; CI runs Spark tests and a full-stack end-to-end check.',
     ],
   },
   {
     name: 'Smart Farming: IoT & analytics engineering platform',
-    meta: 'Sole author · github.com/Med-Dev-99/smart-farming',
-    stack: 'MQTT · Python · TimescaleDB · dbt · Dagster · scikit-learn · Open-Meteo API · Grafana · Docker · GitHub Actions',
+    role: 'Sole author',
+    link: 'github.com/Med-Dev-99/smart-farming',
+    stack: 'MQTT, Python, TimescaleDB, dbt, Dagster, scikit-learn, Open-Meteo API, Grafana, Docker, GitHub Actions',
     points: [
-      'Simulated soil probes on 8 fields at real Souss-Massa farm locations report over MQTT; an edge gateway validates each message against a contract, deduplicates, interpolates short gaps, records long ones and flags spikes.',
-      'TimescaleDB hypertable with compression and a continuous aggregate; 12 dbt models and 30 tests turn probe data and real Open-Meteo weather into FAO-56 irrigation advice, crop suitability and probe health, orchestrated as Dagster assets with asset checks.',
-      'Random-forest crop recommender (22 crops, 99.6 % cross-validated accuracy) applied to each field’s measured soil and climate; CI runs dbt build against a TimescaleDB service container.',
+      'Built an MQTT edge gateway for soil probes on 8 fields (simulated sensors, real farm locations): contract validation, deduplication, gap filling and spike flags.',
+      'Modeled the data in TimescaleDB (hypertable, continuous aggregate) and 12 dbt models with 30 tests, joining real Open-Meteo weather into FAO-56 irrigation advice, crop suitability and sensor health; orchestrated with Dagster.',
+      'Trained a random-forest crop recommender (22 crops, 99.6% cross-validated accuracy) applied to each field\'s measured soil and climate.',
     ],
   },
   {
-    name: 'Docker Inspector: open-source Linux desktop app',
-    meta: 'Sole author · github.com/Med-Dev-99/Docker-inspector',
-    stack: 'Electron · React 19 · TypeScript · Node.js · SQLite · WebSocket · Docker Engine API',
+    name: 'Docker Inspector: open-source container monitoring tool',
+    role: 'Sole author',
+    link: 'github.com/Med-Dev-99/Docker-inspector',
+    stack: 'Electron, React, TypeScript, Node.js, SQLite, WebSocket, Docker Engine API',
     points: [
-      'Records container metrics and events locally; diagnoses crashes in plain English with evidence, last logs and pre-crash metrics; 7-day time-machine history.',
-      'Configuration auditor flags UFW-bypassing ports, secrets in environment variables and missing limits, with one-click fixes; hardened image (read-only, no capabilities, token and Host/Origin checks).',
+      'Built a desktop app that records container metrics and events to SQLite, diagnoses crashes with evidence (last logs, pre-crash metrics) and audits configurations for exposed ports, secrets in environment variables and missing limits.',
     ],
   },
 ];
 
+/** Only skills the experience or projects above show in use. */
 export const resumeSkills = [
-  { group: 'Data engineering', items: 'Apache NiFi, Kafka, Spark (Structured Streaming), Delta Lake, Airflow, Dagster, dbt, Delta Live Tables, Parquet/Arrow, DuckDB, ELT, data contracts, event modelling (DCSA)' },
-  { group: 'Geo & IoT data', items: 'PostGIS, GeoJSON geofencing, AIS vessel data, MQTT, TimescaleDB, GPS / temperature / soil sensor streams' },
-  { group: 'Cloud', items: 'Azure Databricks, ADLS Gen2, BigQuery, AWS S3 & Lambda, Google Cloud Storage & Functions' },
-  { group: 'Databases', items: 'PostgreSQL, PostGIS, TimescaleDB, MongoDB, Cassandra, SQLite, Redis' },
-  { group: 'AI / ML', items: 'LLM agents, MLOps (MLflow registry, champion/challenger), predictive maintenance, OCR & document AI, ETA modelling, LightGBM, PyTorch, scikit-learn, HuggingFace, LangChain/LangGraph' },
-  { group: 'Automation & DevOps', items: 'n8n, FastAPI, Flask, Node.js/Fastify, Docker, GitHub Actions, Linux, REST APIs, Superset' },
-  { group: 'Languages', items: 'Python, SQL, TypeScript, Java, Go, C/C#, Dart' },
+  { group: 'Programming', items: 'Python, SQL, TypeScript, Java, Go' },
+  { group: 'Data engineering', items: 'Apache Spark (PySpark, Structured Streaming), Apache Kafka, Apache NiFi, Apache Airflow, Dagster, dbt, Delta Lake, Delta Live Tables, DuckDB, Parquet, pandas' },
+  { group: 'Data practices', items: 'ETL/ELT, batch and streaming pipelines, data modeling, data warehousing, lakehouse (medallion architecture), data quality, data contracts, geospatial and IoT sensor data (MQTT, GPS, AIS)' },
+  { group: 'Cloud', items: 'Azure (Databricks, ADLS Gen2), AWS (S3, Lambda), GCP (BigQuery, GCS, Cloud Functions)' },
+  { group: 'Databases', items: 'PostgreSQL, PostGIS, TimescaleDB, MongoDB, Cassandra, Redis, SQLite' },
+  { group: 'ML & AI', items: 'scikit-learn, LightGBM, PyTorch, MLflow, LLM agents, LangChain/LangGraph, Hugging Face, NLP, OCR and document AI' },
+  { group: 'DevOps & BI', items: 'Docker, GitHub Actions (CI/CD), Git, Linux, FastAPI, REST APIs, n8n, Apache Superset, Grafana' },
 ];
+
+/** Certifications as the resume lists them: the three DeepLearning.AI courses share one line. */
+export const resumeCredentials = [
+  { name: 'NASA Space Apps Challenge 2026: Galactic Problem Solver', issuer: 'NASA, Nov 2026' },
+  { name: 'Machine Learning, Deep Learning and Natural Language Processing Specializations', issuer: 'DeepLearning.AI (Machine Learning with Stanford Online)' },
+];
+
+export const spokenLanguages = 'Arabic (native), French (professional working proficiency), English (professional working proficiency)';
