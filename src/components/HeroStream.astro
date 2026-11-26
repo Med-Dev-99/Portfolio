@@ -42,7 +42,7 @@ import Icon from './Icon.astro';
       <p class="m-0 mt-4 max-w-[720px] text-[16.5px] leading-relaxed text-fg-2">{hero.sub}</p>
     </div>
     <div class="flex flex-wrap items-center gap-3">
-      <a href="#work" class="btn btn-primary">View projects <Icon name="arrow-right" /></a>
+      <a href="#work" class="btn btn-primary">See the systems <Icon name="arrow-right" /></a>
       <a href={site.resume} class="btn" download><Icon name="download" /> Resume</a>
       <a href={site.github} target="_blank" rel="me noopener" class="grid size-11 place-items-center rounded-[10px] border border-line bg-surface text-fg-2 transition-colors hover:text-fg" aria-label="GitHub profile"><Icon name="github" class="size-5" /></a>
       <a href={site.linkedin} target="_blank" rel="me noopener" class="grid size-11 place-items-center rounded-[10px] border border-line bg-surface text-fg-2 transition-colors hover:text-fg" aria-label="LinkedIn profile"><Icon name="linkedin" class="size-5" /></a>
@@ -72,7 +72,7 @@ import Icon from './Icon.astro';
     t: number; dur: number; sx: number; sy: number; tx: number; ty: number; cell: number; w: number;
   };
 
-  const FRAGS = ['{"vessel":"MSC"}', 'lat=30.42', 'ts=1732541', '"eta":"14:05"', 'id:7f3a', 'temp=21.4', 'frp=12.8', '"mmsi":242', '{…}', 'lon=-9.6'];
+  const FRAGS = ['{"vessel":"MSC"}', 'lat=30.42', 'ts=1732541', '"eta":"14:05"', 'id:7f3a', 'temp=21.4', 'zone=SCANNER', '"mmsi":242', '{…}', 'lon=-9.6'];
   const BAD_FRAGS = ['null', 'NaN', '???', '""'];
   const LINES = ['MOHAMED', 'EL KORCHI'];
   const fmt = new Intl.NumberFormat('en-US');
