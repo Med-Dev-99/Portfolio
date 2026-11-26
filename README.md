@@ -15,7 +15,7 @@ Personal portfolio of **Mohamed El Korchi, AI & Data Engineer**: the data and AI
 | Fonts | Geist + Geist Mono (self-hosted, variable) | No third-party requests; latin subsets preloaded |
 | Motion | SVG pipeline simulation (≈4 KB), CSS scroll-driven animations, View Transitions, Popover API | Native browser features instead of JS libraries; pauses off-screen, honours reduced motion |
 | Navigation | Speculation Rules (HTTP header) | Internal pages prerender on hover for instant loads |
-| Serving | ~20 MB Docker image (Alpine + Nginx, non-root), behind an Nginx TLS proxy and Cloudflare | Read-only container, pre-compressed assets, strict CSP (allows only Cloudflare Web Analytics) |
+| Serving | ~20 MB Docker image (Alpine + Nginx, non-root), behind an Nginx TLS proxy and Cloudflare | Read-only container, pre-compressed assets, strict CSP (allows only Cloudflare Web Analytics and, after consent, Google Analytics) |
 | CI/CD | GitHub Actions: build, secret scan, smoke test, CVE scan, GHCR, blue/green deploy | Every push to `main` is tested and live in minutes, with zero downtime and one-click rollback |
 
 Scripts, all small and framework-free:
