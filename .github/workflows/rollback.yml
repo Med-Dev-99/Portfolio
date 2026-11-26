@@ -1,0 +1,34 @@
+# Manual rollback: switches production back to the previously deployed revision (blue/green,
+# same checks as a deploy). Run it from the Actions tab → Rollback → Run workflow.
+name: Rollback
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    name: Roll back production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: https://mohamedelkorchi.com
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    steps:
+      - name: Switch to the previous revision
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          keys="$(mktemp -d)"; trap 'rm -rf "$keys"' EXIT
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$keys/id"; chmod 600 "$keys/id"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$keys/known_hosts"
+          ssh=(ssh -i "$keys/id" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$keys/known_hosts")
+          "${ssh[@]}" "$DEPLOY_HOST" rollback </dev/null
+          "${ssh[@]}" "$DEPLOY_HOST" status </dev/null
