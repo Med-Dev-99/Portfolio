@@ -1,81 +1,111 @@
 # Deployment
 
-The site runs on the Contabo VPS that also hosts FIREBRIDGE. It is fully separate from FIREBRIDGE except for one thing: the existing FIREBRIDGE Nginx proxy, which owns ports 80/443, terminates TLS for `mohamedelkorchi.com` and forwards requests to the portfolio container.
+The site ships as one small Docker image: Alpine with Nginx and the static files, about 20 MB. GitHub Actions builds, tests and scans the image, then deploys it to the Contabo VPS that also hosts FIREBRIDGE. Every push to `main` goes live this way.
 
 ```
-Internet ──443──▶ firebridge-webapp-proxy (Nginx, TLS, HSTS)
-                    ├─ ogote.com, astramind.solutions ─▶ FIREBRIDGE (unchanged)
-                    └─ mohamedelkorchi.com ────────────▶ portfolio-site:8080 (this repo)
-                                                          Docker network: firebridge-webapp_web
+push to main
+  │
+  ├─ Type-check & build ─────── astro check · astro build
+  ├─ Secret scan ───────────── gitleaks over the full git history
+  └─ Docker image ──────────── build once → smoke test (24 checks, production hardening)
+        │                       → Grype CVE scan (fixable High/Critical fail the build)
+        │                       → publish ghcr.io/med-dev-99/portfolio:<sha> + :latest
+        ▼
+     Deploy (environment: production)
+        ssh portfolio-deploy@VPS ──▶ portfolio-gateway (root-owned, the only command the key can run)
+                                       image:    checksum, size limit, tag check, OCI label check, docker load
+                                       activate: blue/green switch, verified through the real proxy
+        then: https://mohamedelkorchi.com/version.txt must equal the commit SHA
 ```
 
 ## On the server
 
 ```
-/opt/portfolio/
-├── compose.yaml          # from deploy/compose.yaml
-├── nginx.conf            # from deploy/nginx.conf (static file server, headers, caching)
-├── proxy/                # server blocks + install.py for the shared proxy
-└── www/
-    ├── current -> releases/20261125T120000Z-abc1234
-    └── releases/         # last 5 releases kept
+Internet ──443──▶ firebridge-webapp-proxy (Nginx, TLS, HSTS)
+                    ├─ ogote.com, astramind.solutions ─▶ FIREBRIDGE (unchanged)
+                    └─ mohamedelkorchi.com ────────────▶ portfolio-site:8080
+                                                          ├─ portfolio-blue   (one of the two is live;
+                                                          └─ portfolio-green   both during a switch)
+                                                          Docker network: firebridge-webapp_web
 ```
 
-- Container: `nginxinc/nginx-unprivileged`, read-only root filesystem, all capabilities dropped, 64 MB memory limit, no published port.
-- A release is a full copy of `dist/`, pre-compressed with gzip. Switching the `current` symlink is atomic and needs no restart.
-- The portfolio's blocks in `/opt/firebridge/webapp/nginx.proxy.conf` are marked `>>> portfolio … <<<`. `proxy/install.py` adds them after testing the config in a throwaway container. It keeps a timestamped backup (`nginx.proxy.conf.bak-portfolio-*`), reloads gracefully and checks that `ogote.com` still answers. On any failure it rolls back.
-- TLS: Let's Encrypt certificate `mohamedelkorchi.com` (apex + www), obtained through the proxy's existing ACME webroot. The existing `certbot.timer` renews it, and the existing deploy hook reloads the proxy.
+| Path | What |
+| --- | --- |
+| `/usr/local/sbin/portfolio-gateway` | Deploy gateway, from [`server/portfolio-gateway`](server/portfolio-gateway) |
+| `/opt/portfolio/compose.yaml` | Service definition, from [`server/compose.yaml`](server/compose.yaml): read-only filesystem, no capabilities, non-root, 64 MB, no published port |
+| `/opt/portfolio/deployment.json` | Receipt: live revision, colour, time and history (used for rollback) |
+| `/opt/portfolio/logs/gateway.log` | Every gateway step and failure |
+| `/etc/sudoers.d/portfolio-cd` | `portfolio-deploy` may run the gateway as root, without arguments, and nothing else |
+| `/etc/ssh/sshd_config.d/10-portfolio.conf` | Adds `portfolio-deploy` to the accepted users (key only) |
+| `/var/lib/portfolio-deploy/.ssh/authorized_keys` | The CI key, `restrict,command="sudo -n /usr/local/sbin/portfolio-gateway"` |
 
-> **If FIREBRIDGE is ever re-provisioned** (`provision_server.py` copies a fresh `nginx.proxy.conf`), run `npm run deploy -- --https` again to re-add the portfolio blocks.
+**How a switch works:** the new release starts as the other colour, on the same network alias as the live one. Once it is healthy and serves the right `version.txt`, the gateway waits for the proxy's DNS cache to refresh, then stops the old release. It then checks the site through the proxy itself. If that check fails, it restarts the old release and removes the new one. The last 3 images are kept for rollbacks.
 
-## Commands
+**What the CI key can do:** only the gateway's four commands (`status`, `image`, `activate`, `rollback`). An uploaded archive is rejected unless it contains exactly `portfolio-site:<revision>` with this repository's source label and that revision. So the key can never replace another image on the host, such as FIREBRIDGE's, or run anything else.
+
+## First-time setup
+
+1. **Server.** Generate a key for CI, then install the server side:
+   ```bash
+   ssh-keygen -t ed25519 -N '' -C 'github-actions:Med-Dev-99/Portfolio' -f ~/.ssh/portfolio-ci
+   npm run server:setup -- --ci-key ~/.ssh/portfolio-ci.pub
+   ```
+   The script is idempotent. It validates the sudo rule (`visudo -c`) and the sshd change (`sshd -t`, and checks that `root` and the FIREBRIDGE users are still allowed) before reloading sshd. It prints the line for `DEPLOY_KNOWN_HOSTS`.
+2. **GitHub.** In the repository, go to Settings → Environments → **New environment** `production`, and restrict deployments to the `main` branch. Then add:
+   - Secret `DEPLOY_SSH_KEY`: the content of `~/.ssh/portfolio-ci`, the private key. Delete the local copy afterwards.
+   - Variable `DEPLOY_HOST`: `portfolio-deploy@13.140.218.234`
+   - Variable `DEPLOY_KNOWN_HOSTS`: the line printed by the setup script
+   - Variable `DEPLOY_ENABLED`: `true`. Set it as a repository variable, or in the environment.
+3. **Packages.** After the first push to `main`, open the `portfolio` package on GitHub, go to Package settings, and make it public if you want `docker run ghcr.io/med-dev-99/portfolio` to work for everyone.
+
+## Day to day
 
 ```bash
-npm run deploy                 # content update (any time)
-npm run deploy -- --setup      # (re)install container + HTTP block
-npm run deploy -- --https      # certificate + HTTPS block (needs DNS)
+git push                        # CI tests, scans and deploys main automatically
+npm run docker:preview          # local preview of the production image: http://localhost:8080
+npm run deploy                  # break-glass deploy from this machine (root SSH, same gateway and checks)
+npm run server:setup            # after changing deploy/server/* (gateway or compose file)
 ```
 
-DNS in Cloudflare: `A @ → 13.140.218.234` and `A www → 13.140.218.234`, both **DNS only** (grey cloud), the same as the FIREBRIDGE domains.
-
-### Rollback
+**Rollback:** run **Actions → Rollback → Run workflow**, or from a root shell:
 
 ```bash
-ssh root@13.140.218.234
-cd /opt/portfolio/www && ls releases/
-ln -sfn releases/<previous> current.next && mv -Tf current.next current
+ssh root@13.140.218.234 'SSH_ORIGINAL_COMMAND=rollback /usr/local/sbin/portfolio-gateway'
 ```
 
-### Logs and status
+**Status and logs:**
 
 ```bash
-docker compose -f /opt/portfolio/compose.yaml ps
-docker compose -f /opt/portfolio/compose.yaml logs --tail=50
-certbot certificates -d mohamedelkorchi.com
+ssh root@13.140.218.234 'SSH_ORIGINAL_COMMAND=status /usr/local/sbin/portfolio-gateway'
+ssh root@13.140.218.234 'tail -50 /opt/portfolio/logs/gateway.log'
+ssh root@13.140.218.234 'docker ps --filter label=com.docker.compose.project=portfolio-blue --filter label=com.docker.compose.project=portfolio-green'
+curl https://mohamedelkorchi.com/version.txt   # commit SHA that is live
 ```
 
-### Remove the portfolio completely
+**Revoke CI access:** delete `/var/lib/portfolio-deploy/.ssh/authorized_keys` on the server, and the `DEPLOY_SSH_KEY` secret on GitHub.
 
-Delete the `>>> portfolio … <<<` blocks from `/opt/firebridge/webapp/nginx.proxy.conf`, then:
+## Proxy and TLS
+
+The portfolio's blocks in `/opt/firebridge/webapp/nginx.proxy.conf` are marked `>>> portfolio … <<<`. [`proxy/install.py`](proxy/install.py) adds them as follows:
+- it tests the config in a throwaway container first;
+- it keeps a timestamped backup (`nginx.proxy.conf.bak-portfolio-*`);
+- it reloads gracefully and checks that `ogote.com` still answers;
+- it rolls back on any failure.
+
+TLS uses the Let's Encrypt certificate `mohamedelkorchi.com` (apex and www). It is renewed by the existing `certbot.timer`, and the existing deploy hook reloads the proxy.
+
+> **If FIREBRIDGE is ever re-provisioned** (`provision_server.py` copies a fresh `nginx.proxy.conf`), run `npm run server:setup -- --proxy https` to re-add the portfolio blocks.
+
+DNS in Cloudflare: `A @ → 13.140.218.234` and `A www → 13.140.218.234`.
+
+## Remove the portfolio completely
+
+Delete the `>>> portfolio … <<<` blocks from `/opt/firebridge/webapp/nginx.proxy.conf` and reload the proxy. Then run:
 
 ```bash
-cd /opt/firebridge/webapp && docker compose -f compose.yaml exec -T proxy nginx -t && docker compose -f compose.yaml exec -T proxy nginx -s reload
-docker compose -f /opt/portfolio/compose.yaml down && rm -rf /opt/portfolio
+docker rm -f $(docker ps -aq --filter label=com.docker.compose.project=portfolio-blue --filter label=com.docker.compose.project=portfolio-green)
+docker image rm $(docker image ls portfolio-site -q)
+rm -rf /opt/portfolio /usr/local/sbin/portfolio-gateway /etc/sudoers.d/portfolio-cd /etc/ssh/sshd_config.d/10-portfolio.conf
+userdel -r portfolio-deploy && systemctl reload ssh
 certbot delete --cert-name mohamedelkorchi.com
 ```
-
-## Optional: deploy from GitHub Actions
-
-`.github/workflows/ci.yml` always type-checks and builds. To also deploy on every push to `main`:
-
-1. Create a deploy user that can only write the releases:
-   ```bash
-   useradd -m -s /bin/bash portfolio-deploy
-   chown -R portfolio-deploy: /opt/portfolio/www
-   install -d -m 700 -o portfolio-deploy /home/portfolio-deploy/.ssh
-   # append the CI public key to /home/portfolio-deploy/.ssh/authorized_keys
-   ```
-2. In GitHub → Settings → Environments → `production`: add secrets `DEPLOY_SSH_KEY` (the CI private key) and `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan 13.140.218.234`).
-3. Repository variables: `DEPLOY_HOST=portfolio-deploy@13.140.218.234` and `DEPLOY_ENABLED=true`.
-
-Content deploys don't need Docker or root. Use `--setup`/`--https` from your own machine as root.
