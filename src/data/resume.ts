@@ -14,7 +14,7 @@ export const contact = {
 export const headline = 'Data Engineer | Real-time Pipelines, Lakehouse & Applied AI';
 
 export const summary =
-  'Data Engineer with 3+ years designing and running batch and real-time data pipelines in production, with applied AI on top. At Freshtrack I own the data platform of a sea, road and air freight product: Apache NiFi and Python ingestion from carrier APIs, AIS and IoT sensors into a validated PostgreSQL/PostGIS event model, with analytics on Azure Databricks. Built the FIREBRIDGE data platform and AI agent (NASA Space Apps 2026, 666.9M records) and open-source lakehouse and IoT platforms with Kafka, Spark, Delta Lake, Airflow, dbt and MLflow.';
+  'Data Engineer with 3+ years turning messy, real-world data into reliable production platforms. I start from the problem, design the simplest system that solves it, and ship it end to end: ingestion, data quality, modeling, orchestration and applied AI, with Python, SQL, Spark, Kafka, Airflow and dbt. Ambitious to build data platforms people trust and act on.';
 
 export const projects = [
   {
