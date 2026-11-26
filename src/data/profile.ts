@@ -276,7 +276,7 @@ export const predictiveMaintenance = {
       { id: 'bronze', layer: 2, row: 1, icon: 'columns', label: 'Bronze', sub: 'raw · replayable', detail: 'Every Kafka record as received, on Delta Lake (S3), written by Spark Structured Streaming.' },
       { id: 'silver', layer: 3, row: 0.4, icon: 'layers', label: 'Silver', sub: 'contract · dedup', detail: 'Validated against the data contract and deduplicated within a 2-minute watermark.' },
       { id: 'quarantine', layer: 3, row: 1.6, icon: 'scan', label: 'Quarantine', sub: 'rejects + reasons', detail: 'Every rejected record with the rules it broke: malformed JSON, out-of-range values, wrong units.' },
-      { id: 'score', layer: 4, row: 0.4, icon: 'spark', label: 'Live scoring', sub: 'LightGBM · alerts', detail: 'Champion model hot-reloaded from MLflow; alerts graded as confirmed, false alarm or preempted. 98 % precision.' },
+      { id: 'score', layer: 4, row: 0.4, icon: 'spark', label: 'Live scoring', sub: 'LightGBM · alerts', detail: 'Champion model hot-reloaded from MLflow; alerts graded as confirmed, false alarm or preempted. 98% precision.' },
       { id: 'gold', layer: 4, row: 1.6, icon: 'columns', label: 'Gold', sub: 'minute aggregates', detail: '1-minute aggregates per machine, MERGEd as late data arrives.' },
       { id: 'grafana', layer: 5, row: 0, icon: 'chart', label: 'Grafana', sub: 'live fleet', detail: 'Risk, alerts, caught vs missed failures, throughput and data quality.' },
       { id: 'api', layer: 5, row: 1, icon: 'code', label: 'FastAPI', sub: 'REST · SSE alerts', detail: 'Fleet state and a live alert stream pushed by Postgres NOTIFY.' },
@@ -295,7 +295,7 @@ export const predictiveMaintenance = {
         id: 'scoring',
         name: 'Live scoring & alerts',
         summary: 'Every production cycle scored by the champion model; alerts raised before failures and graded against what happened.',
-        facts: ['67–76 % recall', '98 % precision', '8-cycle median warning'],
+        facts: ['67–76% recall', '98% precision', '8-cycle median warning'],
         edges: ['sim>kafka', 'kafka>bronze', 'bronze>silver', 'silver>score', 'score>grafana', 'score>api', 'score>alerts'],
       },
     ],
@@ -326,7 +326,7 @@ export const smartFarming = {
       { id: 'readings', layer: 2, row: 0.5, icon: 'database', label: 'TimescaleDB', sub: 'hypertable · rollups', detail: 'Hypertable compressed after 7 days, hourly continuous aggregate (real-time).' },
       { id: 'weather', layer: 2, row: 1.8, icon: 'database', label: 'Weather', sub: 'hourly per farm', detail: 'Observed and forecast hours, upserted hourly by Dagster.' },
       { id: 'dbt', layer: 3, row: 0.8, icon: 'layers', label: 'dbt models', sub: 'staging → marts', detail: '12 models and 30 tests, including agronomic rules; lineage in Dagster and dbt docs.' },
-      { id: 'model', layer: 3, row: 2.1, icon: 'spark', label: 'Crop model', sub: 'random forest', detail: '22 crops, 99.6 % cross-validated accuracy, applied to each field’s measured conditions.' },
+      { id: 'model', layer: 3, row: 2.1, icon: 'spark', label: 'Crop model', sub: 'random forest', detail: '22 crops, 99.6% cross-validated accuracy, applied to each field’s measured conditions.' },
       { id: 'advice', layer: 4, row: 0, icon: 'drop', label: 'Irrigation', sub: 'FAO-56 advice', detail: 'Irrigate when depletion + 48 h of crop use − forecast rain passes the allowed depletion.' },
       { id: 'recs', layer: 4, row: 1.2, icon: 'chart', label: 'Crop advice', sub: 'top 3 per field', detail: 'Model probabilities next to a profile-fit ranking of every crop.' },
       { id: 'health', layer: 4, row: 2.4, icon: 'monitor', label: 'Probe health', sub: 'gaps · stuck', detail: 'Offline probes, gaps, imputed share and stuck sensors found as flat-line hours.' },
@@ -344,7 +344,7 @@ export const smartFarming = {
         id: 'crops',
         name: 'Crop recommendation',
         summary: 'Each field’s measured soil and climate scored against 22 crops by a model and by profile fit.',
-        facts: ['99.6 % CV accuracy', 'current crop first on 6/8 fields'],
+        facts: ['99.6% CV accuracy', 'current crop first on 6/8 fields'],
         edges: ['readings>dbt', 'weather>dbt', 'dbt>recs', 'model>recs'],
       },
       {
@@ -403,7 +403,7 @@ export const experience = [
     company: 'Freshtrack',
     role: 'AI & Data Engineer',
     period: 'Dec 2023 – Present',
-    place: 'Agadir · On-site',
+    place: 'Agadir, Morocco · On-site',
     current: true,
     /** Shown on the website, where the Work section already details each system. */
     site: [
@@ -412,12 +412,12 @@ export const experience = [
     ],
     /** Full version, used in the resume PDF. */
     points: [
-      'Own all data and AI topics of a sea, road and air logistics platform: Apache NiFi ingestion, Python pipelines, PostgreSQL/PostGIS, ADLS Gen2 and Azure Databricks.',
-      'Maritime track & trace: carrier APIs and AIS milestone feeds unified into one validated event model (chronology guard, source priority, anomaly rejection) driving 14 alert types, including ETA/ETD risk, demurrage and missing containers.',
-      'Truck IoT track & trace and cold chain: 12 geofenced Tanger Med zones turn GPS readings into enter/exit milestones; light and temperature rules detect door openings and cold-chain risks; segment-based ETA from historical trips.',
-      'Carrier data provider for non-integrated carriers: schedules, tariffs, container tracking and vessel positions from 24 carriers behind one cached, monitored DCSA API.',
-      'Automation and document AI: n8n email-to-API booking flows (requests, confirmations, cancellations) with full error handling and traceability; self-hosted OCR and LLM extraction for invoices and shipping documents.',
-      'Analytics: carrier performance, port-stage and trajectory durations and client delay analysis in Superset and React, plus an LLM assistant that writes the briefing.',
+      'Own the data and AI platform of a sea, road and air freight product end to end: Apache NiFi ingestion, Python pipelines, PostgreSQL/PostGIS, ADLS Gen2 and Azure Databricks.',
+      'Unified carrier APIs and AIS milestone feeds into one validated maritime event model (chronology guard, source priority, anomaly rejection) that drives 14 alert types, including ETA/ETD risk, demurrage and missing containers.',
+      'Built truck IoT tracking and cold-chain monitoring: 12 geofenced Tanger Med zones turn GPS readings into enter/exit milestones, light and temperature rules detect door openings and cold-chain risks, and ETAs are predicted per route segment from historical trips.',
+      'Built a carrier data API for non-integrated carriers, serving schedules, tariffs, container tracking and vessel positions from 24 carriers behind one cached, monitored DCSA-standard API.',
+      'Automated booking flows with n8n (email-to-API requests, confirmations and cancellations) with full error handling and traceability, and deployed self-hosted OCR and LLM extraction for invoices and shipping documents.',
+      'Delivered analytics on carrier performance, port-stage and trajectory durations and client delays in Superset and React, with an LLM assistant that writes the briefing from the metrics.',
     ],
     stack: ['Apache NiFi', 'Python', 'PostgreSQL/PostGIS', 'Azure Databricks', 'n8n', 'OCR · LLMs', 'FastAPI', 'Superset'],
   },
@@ -427,8 +427,8 @@ export const experience = [
     period: 'Aug 2023 – Dec 2023',
     place: 'Remote',
     points: [
-      'Built scalable extraction and loading pipelines with Delta Live Tables.',
-      'Serverless data workflows on Google Cloud Functions and AWS Lambda across S3, GCS and BigQuery.',
+      'Built extraction and loading pipelines on Databricks with Delta Live Tables.',
+      'Built serverless data workflows with Google Cloud Functions and AWS Lambda, moving data across S3, GCS and BigQuery.',
     ],
     stack: ['Delta Live Tables', 'BigQuery', 'AWS Lambda', 'GCP'],
   },
@@ -438,8 +438,8 @@ export const experience = [
     period: 'Jul 2023 – Nov 2023',
     place: 'Remote',
     points: [
-      'Document extraction with PaddleOCR, zonal extraction, NER and table parsing; OpenCV preprocessing and a custom-trained NER model.',
-      'REST API in Flask to automate extraction and integration workflows.',
+      'Built a document-extraction pipeline with PaddleOCR: OpenCV preprocessing, zonal extraction, table parsing and a custom-trained NER model.',
+      'Exposed it as a Flask REST API to automate extraction and integration workflows.',
     ],
     stack: ['PaddleOCR', 'OpenCV', 'NER', 'Flask'],
   },
@@ -447,8 +447,10 @@ export const experience = [
     company: 'Ibn Zohr University',
     role: 'Master’s Research, Big Data & AI',
     period: 'Feb 2023 – Jul 2023',
-    place: 'Agadir',
-    points: ['Session-based recommendation with hybrid GAT, GCN and attention, 4% better than state-of-the-art models.'],
+    place: 'Agadir, Morocco',
+    /** The resume lists this as the thesis under Education, so ATS do not count it as a job. */
+    resume: false,
+    points: ['Designed a session-based recommender with hybrid GAT, GCN and attention layers in PyTorch, 4% better than state-of-the-art models.'],
     stack: ['PyTorch', 'GNN'],
   },
 ];
@@ -474,8 +476,11 @@ export const about = {
 /* ---------- Education & credentials ---------- */
 
 export const education = [
-  { degree: 'Master’s, Big Data & Artificial Intelligence', school: 'Ibn Zohr University, FPT', period: '2021 – 2023' },
-  { degree: 'Licence, Computer Engineering', school: 'Ibn Zohr University, FPT', period: '2020 – 2021' },
+  {
+    degree: 'Master’s, Big Data & Artificial Intelligence', school: 'Ibn Zohr University, FPT', period: '2021 – 2023',
+    thesis: 'Session-based recommender with hybrid GAT, GCN and attention layers in PyTorch, 4% better than state-of-the-art models.',
+  },
+  { degree: 'Bachelor’s (Licence), Computer Engineering', school: 'Ibn Zohr University, FPT', period: '2020 – 2021' },
   { degree: 'IT Development Technician Diploma', school: 'ISGI Laayoune', period: '2017 – 2019' },
 ];
 
