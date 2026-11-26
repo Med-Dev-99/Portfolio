@@ -107,7 +107,7 @@ export const freshtrack = {
   badge: 'Freshtrack · since Dec 2023',
   name: 'A real-time data platform for freight',
   summary:
-    'Freshtrack lets exporters book and follow shipments by sea, road and air. I designed and run its data and AI: six production systems on one platform, from raw feeds to risk alerts.',
+    'Freshtrack lets exporters book and follow about 20,000 shipments a year by sea, road and air. I designed and run its data and AI: six production systems on one platform, from raw feeds to risk alerts.',
   site: 'https://www.freshtrack.ma/en/',
   map: {
     id: 'freshtrack',
@@ -407,12 +407,12 @@ export const experience = [
     current: true,
     /** Shown on the website, where the Work section already details each system. */
     site: [
-      'Designed and run the data and AI platform of a sea, road and air freight product: ingestion with Apache NiFi and n8n, Python pipelines, PostgreSQL/PostGIS, ADLS Gen2 and Databricks.',
+      'Designed and run the data and AI platform behind ~20,000 sea, road and air shipments a year: ingestion with Apache NiFi and n8n, Python pipelines, PostgreSQL/PostGIS, ADLS Gen2 and Databricks.',
       'Six production systems on it, from real-time track & trace and cold-chain risk to document AI and analytics (see the architecture above).',
     ],
     /** Full version, used in the resume PDF. */
     points: [
-      'Own the data and AI platform of a sea, road and air freight product end to end: Apache NiFi ingestion, Python pipelines, PostgreSQL/PostGIS, ADLS Gen2 and Azure Databricks.',
+      'Own end to end the data and AI platform behind ~20,000 sea, road and air shipments a year: Apache NiFi ingestion, Python pipelines, PostgreSQL/PostGIS, ADLS Gen2 and Azure Databricks.',
       'Unified carrier APIs and AIS milestone feeds into one validated maritime event model (chronology guard, source priority, anomaly rejection) that drives 14 alert types, including ETA/ETD risk, demurrage and missing containers.',
       'Built truck IoT tracking and cold-chain monitoring: 12 geofenced Tanger Med zones turn GPS readings into enter/exit milestones, light and temperature rules detect door openings and cold-chain risks, and ETAs are predicted per route segment from historical trips.',
       'Built a carrier data API for non-integrated carriers, serving schedules, tariffs, container tracking and vessel positions from 24 carriers behind one cached, monitored DCSA-standard API.',
