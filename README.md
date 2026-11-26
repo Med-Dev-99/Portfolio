@@ -22,9 +22,7 @@ Scripts, all small and framework-free:
 
 - `public/theme.js` (≈1 KB): applies the saved theme before first paint.
 - `HeroStream.astro`: the hero canvas, where raw records pass a validation gate and assemble the name.
-- `PipelineSim.astro` (≈4 KB): the Freshtrack data flow: carrier APIs, AIS, IoT trackers, emails and carrier websites pass through ingest → validate → unify → enrich → serve; failed records go to quarantine. Without JavaScript or with reduced motion it renders as a static diagram.
-- `SystemExplorer.astro` (<1 KB): tabs for the six Freshtrack systems, each with a sample log that replays line by line. Without JavaScript every system is shown.
-- `StackLineage.astro` (≈2 KB): hover or tap a tool to trace where it was used.
+- `ArchMap.astro` (≈2 KB of script): each project drawn as a layered architecture diagram (sources → ingest → process → store → serve). Pick a flow to light up its data path, hover a component to see what it does and every flow that uses it; while on screen it steps through the flows by itself. Phones get the selected flow as a vertical pipeline; without JavaScript the full diagram and every caption are shown.
 - `Header.astro` (<1 KB): section links show pipeline-run states (pending → running → done) as you scroll.
 
 ## Develop
