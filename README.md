@@ -1,8 +1,8 @@
 # mohamedelkorchi.com
 
-Personal portfolio of **Mohamed El Korchi, Data Engineer**: selected work, case studies and resume.
+Personal portfolio of **Mohamed El Korchi, AI & Data Engineer**: the data and AI systems behind Freshtrack, case studies and resume.
 
-**Live:** https://mohamedelkorchi.com
+**Live:** https://mohamedelkorchi.com · [![CI/CD](https://github.com/Med-Dev-99/Portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/Med-Dev-99/Portfolio/actions/workflows/ci.yml)
 
 ![Portfolio preview](public/og.png)
 
@@ -15,12 +15,15 @@ Personal portfolio of **Mohamed El Korchi, Data Engineer**: selected work, case 
 | Fonts | Geist + Geist Mono (self-hosted, variable) | No third-party requests; latin subsets preloaded |
 | Motion | SVG pipeline simulation (≈4 KB), CSS scroll-driven animations, View Transitions, Popover API | Native browser features instead of JS libraries; pauses off-screen, honours reduced motion |
 | Navigation | Speculation Rules (HTTP header) | Internal pages prerender on hover for instant loads |
-| Serving | `nginx-unprivileged` in Docker, behind an Nginx TLS proxy and Cloudflare | Read-only container, pre-compressed assets, strict CSP (allows only Cloudflare Web Analytics) |
+| Serving | ~20 MB Docker image (Alpine + Nginx, non-root), behind an Nginx TLS proxy and Cloudflare | Read-only container, pre-compressed assets, strict CSP (allows only Cloudflare Web Analytics) |
+| CI/CD | GitHub Actions: build, secret scan, smoke test, CVE scan, GHCR, blue/green deploy | Every push to `main` is tested and live in minutes, with zero downtime and one-click rollback |
 
 Scripts, all small and framework-free:
 
 - `public/theme.js` (≈1 KB): applies the saved theme before first paint.
-- `PipelineSim.astro` (≈4 KB): the hero's live pipeline: records flow from sources through ingest → validate → store → transform → serve; failed records go to quarantine. Without JavaScript or with reduced motion it renders as a static diagram.
+- `HeroStream.astro`: the hero canvas, where raw records pass a validation gate and assemble the name.
+- `PipelineSim.astro` (≈4 KB): the Freshtrack data flow: carrier APIs, AIS, IoT trackers, emails and carrier websites pass through ingest → validate → unify → enrich → serve; failed records go to quarantine. Without JavaScript or with reduced motion it renders as a static diagram.
+- `SystemExplorer.astro` (<1 KB): tabs for the six Freshtrack systems, each with a sample log that replays line by line. Without JavaScript every system is shown.
 - `StackLineage.astro` (≈2 KB): hover or tap a tool to trace where it was used.
 - `Header.astro` (<1 KB): section links show pipeline-run states (pending → running → done) as you scroll.
 
@@ -63,15 +66,29 @@ magick input.png -resize '1440x>' -strip -quality 82 public/images/<project>/<na
 magick input.png -resize '800x>'  -strip -quality 82 public/images/<project>/<name>-800.webp
 ```
 
-## Deploy
+## Docker
 
 ```bash
-npm run deploy                 # build, upload, switch release atomically (no restarts)
-npm run deploy -- --setup      # first install / config change
-npm run deploy -- --https      # certificate + HTTPS (once DNS points at the server)
+npm run docker:preview     # build the production image and serve it on http://localhost:8080
 ```
 
-See [deploy/README.md](deploy/README.md) for how the site sits next to other services on the VPS, rollback and optional CI/CD.
+The [`Dockerfile`](Dockerfile) builds the site with Node, then copies only the static files and the Nginx config into Alpine + Nginx, which runs as a non-root user. Base images are pinned by digest and kept current by Dependabot.
+
+## Deploy
+
+Push to `main`. [GitHub Actions](.github/workflows/ci.yml) runs these steps:
+1. type-checks and builds the site;
+2. scans the git history for secrets;
+3. builds the image once, smoke-tests it with production hardening and scans it for CVEs;
+4. publishes it to GHCR;
+5. deploys it blue/green to the VPS through a restricted SSH gateway;
+6. checks that the live site serves the new commit.
+
+```bash
+npm run deploy             # break-glass deploy from this machine (same image, tests and gateway)
+```
+
+[deploy/README.md](deploy/README.md) covers the server layout, first-time setup (secrets and variables), rollback and logs.
 
 ## License
 
