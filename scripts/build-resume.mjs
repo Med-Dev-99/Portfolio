@@ -18,8 +18,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { chromium } from 'playwright-core';
-import { site, experience, education, credentials } from '../src/data/profile.ts';
-import { contact, summary, projects, resumeSkills } from '../src/data/resume.ts';
+import { site, experience, education } from '../src/data/profile.ts';
+import { contact, headline, summary, projects, resumeSkills, resumeCredentials, spokenLanguages } from '../src/data/resume.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -44,26 +44,40 @@ const fonts = `
   @font-face { font-family: Geist; font-weight: 100 900; src: url(${font('@fontsource-variable/geist', 'geist-latin-wght-normal.woff2')}) format('woff2'); }
   @font-face { font-family: Mono; font-weight: 100 900; src: url(${font('@fontsource-variable/geist-mono', 'geist-mono-latin-wght-normal.woff2')}) format('woff2'); }
 `;
+/*
+ * The PDF uses static font files (scripts/fonts, SIL OFL 1.1, from the official geist package).
+ * Chrome embeds a variable font as Type 3 glyph procedures, and text extracted from those loses
+ * the spaces in bold lines ("MohamedElKorchi"), which breaks applicant tracking systems. Static
+ * fonts are embedded as TrueType with real space characters, so every parser reads clean text.
+ */
+const staticFont = (file) => `data:font/woff2;base64,${readFileSync(join(root, 'scripts/fonts', file)).toString('base64')}`;
+const pdfFonts = `
+  @font-face { font-family: Geist; font-weight: 400; src: url(${staticFont('Geist-Regular.woff2')}) format('woff2'); }
+  @font-face { font-family: Geist; font-weight: 600; src: url(${staticFont('Geist-SemiBold.woff2')}) format('woff2'); }
+  @font-face { font-family: Mono; font-weight: 400; src: url(${staticFont('GeistMono-Regular.woff2')}) format('woff2'); }
+  @font-face { font-family: Mono; font-weight: 500; src: url(${staticFont('GeistMono-Medium.woff2')}) format('woff2'); }
+  @font-face { font-family: Mono; font-weight: 600; src: url(${staticFont('GeistMono-SemiBold.woff2')}) format('woff2'); }
+`;
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /* ---------------- Resume ---------------- */
-const resumeHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(site.name)}: Resume</title>
-<style>${fonts}
+const resumeHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(site.name)} | Data Engineer | Resume</title>
+<style>${pdfFonts}
   @page { size: A4; margin: 13mm 14mm 12mm; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 9.3pt/1.42 Geist, sans-serif; color: #141a26; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   a { color: inherit; text-decoration: none; }
   header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 9px; border-bottom: 2px solid #141a26; }
-  h1 { font: 600 24pt/1 Geist, sans-serif; letter-spacing: -.02em; margin: 0; }
-  .role { font: 600 10.5pt Geist, sans-serif; color: #2448e0; margin-top: 5px; letter-spacing: .02em; }
-  .contact { text-align: right; font-size: 8.4pt; color: #3a4354; line-height: 1.55; }
-  h2 { font: 600 8pt Mono, monospace; letter-spacing: .16em; text-transform: uppercase; color: #2448e0; margin: 13px 0 6px; display: flex; align-items: center; gap: 8px; }
+  h1 { font: 600 24pt/1 Geist, sans-serif; margin: 0; } /* no negative tracking: parsers would lose the word spaces */
+  .role { font: 600 10.5pt Geist, sans-serif; color: #2448e0; margin-top: 5px; white-space: nowrap; }
+  .contact { flex: none; text-align: right; font-size: 8.4pt; color: #3a4354; line-height: 1.5; white-space: nowrap; }
+  h2 { font: 600 8pt Mono, monospace; letter-spacing: .1em; text-transform: uppercase; color: #2448e0; margin: 13px 0 6px; display: flex; align-items: center; gap: 8px; }
   h2::after { content: ''; flex: 1; height: 1px; background: #dcdfe5; }
   p { margin: 0; }
   .summary { color: #2b3344; }
   .item { margin-bottom: 8px; break-inside: avoid; }
   .row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
-  .title { font-weight: 650; font-size: 9.8pt; }
+  .title { font-weight: 600; font-size: 9.8pt; }
   .title .org { color: #2448e0; }
   .date { font: 500 7.8pt Mono, monospace; color: #5b6577; white-space: nowrap; }
   .meta { font-size: 8.3pt; color: #5b6577; }
@@ -72,49 +86,49 @@ const resumeHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><
   li { margin: 1.5px 0; color: #2b3344; }
   li::marker { color: #2448e0; }
   .skills { display: grid; grid-template-columns: 128px 1fr; gap: 2.5px 10px; }
-  .skills dt { font-weight: 650; }
+  .skills dt { font-weight: 600; }
   .skills dd { margin: 0; color: #2b3344; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; }
-  .compact .item { margin-bottom: 4px; }
+  .compact .item { margin-bottom: 3px; }
+  .compact .meta { display: inline; }
 </style></head><body>
 <header>
-  <div><h1>${esc(site.name)}</h1><div class="role">${esc(site.role)} · Logistics data</div></div>
+  <div><h1>${esc(site.name)}</h1><div class="role">${esc(headline)}</div></div>
   <div class="contact">
-    ${esc(site.location)} · ${esc(contact.phone)}<br>
-    <a href="mailto:${esc(site.email)}">${esc(site.email)}</a> · <a href="${esc(site.url)}">${esc(contact.website)}</a><br>
-    <a href="${esc(site.linkedin)}">${esc(contact.linkedin)}</a> · <a href="${esc(site.github)}">${esc(contact.github)}</a>
+    ${esc(site.location)} | ${esc(contact.phone)}<br>
+    <a href="mailto:${esc(site.email)}">${esc(site.email)}</a><br>
+    <a href="${esc(site.url)}">${esc(contact.website)}</a> | <a href="${esc(site.github)}">${esc(contact.github)}</a><br>
+    <a href="${esc(site.linkedin)}">${esc(contact.linkedin)}</a>
   </div>
 </header>
 
-<h2>Profile</h2>
+<h2>Summary</h2>
 <p class="summary">${esc(summary)}</p>
 
-<h2>Experience</h2>
-${experience.map((job) => `<div class="item">
-  <div class="row"><span class="title">${esc(job.role)} · <span class="org">${esc(job.company)}</span></span><span class="date">${esc(job.period)}</span></div>
-  <div class="meta">${esc(job.place)} · ${esc(job.stack.join(', '))}</div>
+<h2>Work Experience</h2>
+${experience.filter((job) => job.resume !== false).map((job) => `<div class="item">
+  <div class="row"><span class="title">${esc(job.role)} | <span class="org">${esc(job.company)}</span> <span class="meta">| ${esc(job.place)}</span></span><span class="date">${esc(job.period)}</span></div>
+  <div class="stack">${esc(job.stack.join(', '))}</div>
   <ul>${job.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
 </div>`).join('')}
 
 <h2>Projects</h2>
 ${projects.map((p) => `<div class="item">
-  <div class="row"><span class="title">${esc(p.name)}</span>${p.meta ? `<span class="date">${esc(p.meta)}</span>` : ''}</div>
+  <div class="title">${esc(p.name)}</div>
+  <div class="meta">${esc(p.role)} | <a href="https://${esc(p.link)}">${esc(p.link)}</a></div>
   <div class="stack">${esc(p.stack)}</div>
   <ul>${p.points.map((pt) => `<li>${esc(pt)}</li>`).join('')}</ul>
 </div>`).join('')}
 
-<h2>Skills</h2>
+<h2>Technical Skills</h2>
 <dl class="skills">${resumeSkills.map((s) => `<dt>${esc(s.group)}</dt><dd>${esc(s.items)}</dd>`).join('')}</dl>
 
-<div class="two compact">
-  <div>
-    <h2>Education</h2>
-    ${education.map((e) => `<div class="item"><div class="title">${esc(e.degree)}</div><div class="meta">${esc(e.school)} · ${esc(e.period)}</div></div>`).join('')}
-  </div>
-  <div>
-    <h2>Awards &amp; certifications</h2>
-    ${credentials.map((c) => `<div class="item"><div class="title">${esc(c.name)}</div><div class="meta">${esc(c.issuer)}</div></div>`).join('')}
-  </div>
+<div class="compact">
+  <h2>Education</h2>
+  ${education.map((e) => `<div class="item"><div class="row"><span><span class="title">${esc(e.degree)}</span> <span class="meta">| ${esc(e.school)}</span></span><span class="date">${esc(e.period)}</span></div>${e.thesis ? `<div class="meta" style="display:block">Thesis: ${esc(e.thesis)}</div>` : ''}</div>`).join('')}
+  <h2>Certifications &amp; Awards</h2>
+  ${resumeCredentials.map((c) => `<div class="item"><span class="title">${esc(c.name)}</span> <span class="meta">| ${esc(c.issuer)}</span></div>`).join('')}
+  <h2>Languages</h2>
+  <p>${esc(spokenLanguages)}</p>
 </div>
 </body></html>`;
 
@@ -177,12 +191,13 @@ const browser = await chromium.launch({ executablePath: findChrome() });
 try {
   const page = await browser.newPage();
 
-  await page.setContent(resumeHtml, { waitUntil: 'load' });
+  const atsHtml = resumeHtml.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-');
+  await page.setContent(atsHtml, { waitUntil: 'load' });
   await page.evaluate(() => document.fonts.ready);
   mkdirSync(join(root, 'public/resume'), { recursive: true });
   const pdfPath = join(root, 'public/resume/Mohamed-El-Korchi-Resume.pdf');
   await page.pdf({ path: pdfPath, format: 'A4', printBackground: true, preferCSSPageSize: true, tagged: true, outline: true });
-  if (process.env.RESUME_HTML) writeFileSync(process.env.RESUME_HTML, resumeHtml);
+  if (process.env.RESUME_HTML) writeFileSync(process.env.RESUME_HTML, atsHtml);
   console.log('✓', pdfPath);
 
   await page.setViewportSize({ width: 1200, height: 630 });
