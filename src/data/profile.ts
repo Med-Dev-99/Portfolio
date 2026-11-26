@@ -394,7 +394,7 @@ export const toolbox = [
   { layer: 'Store', tools: ['PostgreSQL', 'PostGIS', 'TimescaleDB', 'Delta Lake', 'ADLS Gen2', 'Parquet', 'BigQuery'] },
   { layer: 'Orchestrate', tools: ['Airflow', 'Dagster', 'Docker', 'GitHub Actions'] },
   { layer: 'Serve', tools: ['FastAPI', 'Node.js · Fastify', 'Superset', 'Grafana'] },
-  { layer: 'AI & ML', tools: ['LLM agents', 'LangGraph', 'MLflow', 'LightGBM', 'scikit-learn', 'PyTorch', 'OCR'] },
+  { layer: 'AI & ML', tools: ['LLM agents', 'MLflow', 'LightGBM', 'scikit-learn', 'PyTorch', 'OCR'] },
   { layer: 'Languages', tools: ['Python', 'SQL', 'TypeScript', 'Go'] },
 ];
 
@@ -416,16 +416,16 @@ export const experience = [
     points: [
       'Own end to end the data and AI platform behind ~20,000 sea, road and air shipments a year: Apache NiFi ingestion, Python pipelines, PostgreSQL/PostGIS, ADLS Gen2 and Azure Databricks.',
       'Unified carrier APIs and AIS milestone feeds into one validated maritime event model (chronology guard, source priority, anomaly rejection) that drives 14 alert types, including ETA/ETD risk, demurrage and missing containers.',
-      'Built truck IoT tracking and cold-chain monitoring: 12 geofenced Tanger Med zones turn GPS readings into enter/exit milestones, light and temperature rules detect door openings and cold-chain risks, and ETAs are predicted per route segment from historical trips.',
+      'Built real-time truck IoT tracking and cold-chain monitoring: 12 geofenced Tanger Med zones turn GPS readings into enter/exit milestones, light and temperature rules detect door openings and cold-chain risks, and ETAs are predicted per route segment from historical trips.',
       'Built a carrier data API for non-integrated carriers, serving schedules, tariffs, container tracking and vessel positions from 24 carriers behind one cached, monitored DCSA-standard API.',
       'Automated booking flows with n8n (email-to-API requests, confirmations and cancellations) with full error handling and traceability, and deployed self-hosted OCR and LLM extraction for invoices and shipping documents.',
-      'Delivered analytics on carrier performance, port-stage and trajectory durations and client delays in Superset and React, with an LLM assistant that writes the briefing from the metrics.',
+      'Built a Parquet lakehouse on ADLS Gen2 with Azure Databricks (Spark) for carrier scorecards, port-stage and trajectory durations and client delay analysis, served in Superset and React with an LLM assistant that writes the briefing.',
     ],
     stack: ['Apache NiFi', 'Python', 'PostgreSQL/PostGIS', 'Azure Databricks', 'n8n', 'OCR · LLMs', 'FastAPI', 'Superset'],
   },
   {
     company: 'Brocoli Data',
-    role: 'Data Engineering Intern',
+    role: 'Data Engineering Intern (part-time)',
     period: 'Aug 2023 – Dec 2023',
     place: 'Remote',
     points: [
@@ -436,7 +436,7 @@ export const experience = [
   },
   {
     company: 'AGILISYS',
-    role: 'ML & Python Developer Intern',
+    role: 'ML & Python Developer Intern (part-time)',
     period: 'Jul 2023 – Nov 2023',
     place: 'Remote',
     points: [
