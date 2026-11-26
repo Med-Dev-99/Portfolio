@@ -1,0 +1,20 @@
+# Only what `npm run build` needs goes into the build context.
+.git
+.github
+.astro
+.vscode
+.idea
+node_modules
+dist
+deploy/ci
+deploy/server
+deploy/proxy
+deploy/README.md
+scripts
+compose.yaml
+Dockerfile
+.dockerignore
+*.log
+.env
+.env.*
+.DS_Store
